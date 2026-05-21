@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "project-lookahead-mobile",
-    "slug": "project-lookahead-mobile",
+    "name": "Project Lookahead",
+    "slug": "project-lookahead",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,21 +10,31 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#2E7D32"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.projectlookahead.app",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#2E7D32"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "com.projectlookahead.app",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "iosUseFrameworks": "static"
+        }
+      ]
+    ]
   }
 }
