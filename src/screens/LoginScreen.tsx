@@ -18,10 +18,18 @@ const discovery = {
 };
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const BACKEND_BASE = Constants.manifest?.extra?.apiBaseUrl || 'http://localhost:3000';
+  // Backend base URL comes from app config extras or falls back to localhost for dev.
+  const BACKEND_BASE =
+    // newer Expo versions use expoConfig
+    (Constants.manifest?.extra?.apiBaseUrl as string) ||
+    (Constants.expoConfig?.extra?.apiBaseUrl as string) ||
+    'http://localhost:3000';
 
-  // Do NOT commit client IDs. Provide via app config (expo extras) or env at runtime.
-  const CLIENT_ID = Constants.manifest?.extra?.googleClientId || '<GOOGLE_CLIENT_ID_PLACEHOLDER>';
+  // Do NOT commit client IDs or secrets. Provide via app config (expo extras) or env at runtime.
+  const CLIENT_ID =
+    (Constants.manifest?.extra?.googleClientId as string) ||
+    (Constants.expoConfig?.extra?.googleClientId as string) ||
+    '<GOOGLE_CLIENT_ID_PLACEHOLDER>';
 
   const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
 
@@ -58,6 +66,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
         // include credentials so cookies set by the backend are stored
+        // This allows cookie-based sessions to be established by the server.
         credentials: 'include',
       });
 
@@ -68,14 +77,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         return;
       }
 
-      // Backend may return a JSON with an accessToken, or rely on cookies. Save token if provided.
+      // Backend may either set a cookie-based session (credentials: 'include') or
+      // return a JWT/access token in the JSON response. Handle both:
+      let handled = false;
       try {
         const data = await res.json();
-        if (data?.accessToken) {
-          await AsyncStorage.setItem('accessToken', data.accessToken);
+        if (data?.accessToken || data?.token) {
+          const token = data.accessToken || data.token;
+          await AsyncStorage.setItem('accessToken', token);
+          await AsyncStorage.setItem('sessionType', 'jwt');
+          handled = true;
         }
       } catch (_) {
-        // ignore JSON parse errors; cookie-based session is fine
+        // If response is not JSON, it may be a cookie-based session; we'll treat that as success.
+      }
+
+      if (!handled) {
+        // Mark that we expect a cookie-based session (server-set cookie).
+        // Note: on native, cookie persistence depends on environment; when using Expo proxy
+        // with fetch(..., credentials: 'include') cookies should be forwarded to the dev server.
+        await AsyncStorage.setItem('sessionType', 'cookie');
       }
 
       // Navigate into the app
