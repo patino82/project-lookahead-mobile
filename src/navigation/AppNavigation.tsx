@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { amplitude } from '../config/amplitude';
 
 import { LoginScreen } from '../screens/LoginScreen';
 import { ProjectListScreen } from '../screens/ProjectListScreen';
@@ -35,8 +36,21 @@ function MainTabs() {
 }
 
 export default function AppNavigation() {
+  const previousScreen = useRef<string | undefined>(undefined);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      onStateChange={(state) => {
+        const current = state?.routes[state.index]?.name;
+        if (current && current !== previousScreen.current) {
+          amplitude.track('Screen Viewed', {
+            screen_name: current,
+            previous_screen: previousScreen.current ?? null,
+          });
+          previousScreen.current = current;
+        }
+      }}
+    >
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen 
           name="Login" 

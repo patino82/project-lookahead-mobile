@@ -1,25 +1,65 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { COLORS, SPACING } from '../constants';
 import { Card } from '../components/Card';
 import { Project } from '../types';
-
-const MOCK_PROJECTS: Project[] = [
-  { id: '1', name: 'Downtown Plaza', location: 'NYC', status: 'active', lastUpdated: '2026-05-19' },
-  { id: '2', name: 'Westside Bridge', location: 'SF', status: 'active', lastUpdated: '2026-05-18' },
-  { id: '3', name: 'East Lake Residences', location: 'Miami', status: 'on-hold', lastUpdated: '2026-05-15' },
-  { id: '4', name: 'North Port Terminal', location: 'Seattle', status: 'completed', lastUpdated: '2026-04-20' },
-];
+import { amplitude } from '../config/amplitude';
+import { apiFetch } from '../services/api';
 
 interface ProjectListScreenProps {
   navigation: any;
 }
 
 export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation }) => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProjects = async () => {
+    try {
+      setError(null);
+      const data = await apiFetch('/api/projects');
+      if (data && data.projects) {
+        // Map backend Project type to mobile Project type
+        const mappedProjects: Project[] = data.projects.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          location: p.location || 'No location',
+          status: p.status,
+          lastUpdated: new Date(p.updatedAt).toISOString().slice(0, 10),
+        }));
+        setProjects(mappedProjects);
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects', err);
+      setError('Could not load projects. Check your connection.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
+
   const renderItem = ({ item }: { item: Project }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.itemContainer}
-      onPress={() => navigation.navigate('Today', { projectId: item.id })}
+      onPress={() => {
+        amplitude.track('Project Selected', {
+          project_id: item.id,
+          project_name: item.name,
+          project_status: item.status,
+        });
+        navigation.navigate('Today', { projectId: item.id });
+      }}
     >
       <Card title={item.name}>
         <Text style={styles.locationText}>{item.location}</Text>
@@ -29,14 +69,33 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
     </TouchableOpacity>
   );
 
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>My Projects</Text>
+      {error && <Text style={styles.errorText}>{error}</Text>}
       <FlatList
-        data={MOCK_PROJECTS}
+        data={projects}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No projects found.</Text>
+            </View>
+          ) : null
+        }
       />
     </View>
   );
@@ -46,6 +105,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     fontSize: 24,
@@ -73,5 +136,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 4,
+  },
+  errorText: {
+    color: COLORS.error,
+    textAlign: 'center',
+    marginVertical: SPACING.md,
+  },
+  emptyContainer: {
+    padding: SPACING.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
   },
 });

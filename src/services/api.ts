@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENV } from '../config/env';
 
-const API_BASE = (global as any).__API_BASE__ || 'http://localhost:3000';
+const API_BASE = ENV.API_BASE;
 
 export async function apiFetch(path: string, opts: RequestInit = {}) {
   const headers = new Headers(opts.headers || {});

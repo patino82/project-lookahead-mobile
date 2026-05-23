@@ -1,10 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CustomButton } from '../components/CustomButton';
 import { COLORS, SPACING } from '../constants';
+import { amplitude } from '../config/amplitude';
+import { ENV } from '../config/env';
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface LoginScreenProps {
   navigation: any;
@@ -18,20 +22,12 @@ const discovery = {
 };
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  // Backend base URL comes from app config extras or falls back to localhost for dev.
-  const BACKEND_BASE =
-    // newer Expo versions use expoConfig
-    (Constants.manifest?.extra?.apiBaseUrl as string) ||
-    (Constants.expoConfig?.extra?.apiBaseUrl as string) ||
-    'http://localhost:3000';
+  const BACKEND_BASE = ENV.API_BASE;
+  const CLIENT_ID = ENV.GOOGLE_CLIENT_ID;
 
-  // Do NOT commit client IDs or secrets. Provide via app config (expo extras) or env at runtime.
-  const CLIENT_ID =
-    (Constants.manifest?.extra?.googleClientId as string) ||
-    (Constants.expoConfig?.extra?.googleClientId as string) ||
-    '<GOOGLE_CLIENT_ID_PLACEHOLDER>';
-
-  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+  const redirectUri = AuthSession.makeRedirectUri({
+    preferLocalhost: true,
+  });
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -98,6 +94,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         // with fetch(..., credentials: 'include') cookies should be forwarded to the dev server.
         await AsyncStorage.setItem('sessionType', 'cookie');
       }
+
+      amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
 
       // Navigate into the app
       navigation.replace('MainTabs');
