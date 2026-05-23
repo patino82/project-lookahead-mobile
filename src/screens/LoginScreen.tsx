@@ -37,8 +37,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       clientId: CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      responseType: 'id_token',
-      usePKCE: false,
+      responseType: AuthSession.ResponseType.Code,
     },
     discovery
   );
@@ -49,9 +48,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   useEffect(() => {
     if (response?.type === 'success') {
-      const { id_token } = response.params;
-      console.log('Token received, exchanging...');
-      handleTokenExchange(id_token);
+      const { code } = response.params;
+      console.log('Code received, exchanging...');
+      handleCodeExchange(code);
     } else if (response?.type === 'error' || response?.type === 'cancel') {
       console.log('Login event:', response.type, response);
     }
@@ -64,12 +63,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
   };
 
-  const handleTokenExchange = async (idToken: string) => {
+  const handleCodeExchange = async (code: string) => {
     try {
       const res = await fetch(`${BACKEND_BASE}/api/auth/exchange`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: idToken }),
+        body: JSON.stringify({ 
+          code,
+          redirect_uri: redirectUri 
+        }),
       });
 
       const data = await res.json();
