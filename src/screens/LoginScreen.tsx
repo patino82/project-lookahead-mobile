@@ -26,8 +26,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const CLIENT_ID = ENV.GOOGLE_CLIENT_ID;
 
   const redirectUri = AuthSession.makeRedirectUri({
+    path: '/',
     preferLocalhost: true,
   });
+
+  console.log('Redirect URI:', redirectUri);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -46,7 +49,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
+      console.log('Token received, exchanging...');
       handleTokenExchange(id_token);
+    } else if (response?.type === 'error' || response?.type === 'cancel') {
+      console.log('Login event:', response.type, response);
     }
   }, [response]);
 
