@@ -1,5 +1,5 @@
-const API_BASE = 'http://localhost:3000';
-const GOOGLE_CLIENT_ID = '9367410596-o8nre0n9jnd0i0m7p8q1u0v8n9jnd0i0.apps.googleusercontent.com'; // PLACEHOLDER
+const API_BASE = 'https://project-lookahead-webapp.vercel.app';
+const GOOGLE_CLIENT_ID = '463152825988-q6pb25f3f0916ltkbo4braqlgp1k7qui.apps.googleusercontent.com';
 
 export const ENV = {
   API_BASE,
