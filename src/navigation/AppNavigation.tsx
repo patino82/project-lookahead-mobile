@@ -16,7 +16,9 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MainTabs() {
+function MainTabs({ route }: any) {
+  const { projectId } = route.params || {};
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -24,12 +26,32 @@ function MainTabs() {
         tabBarActiveTintColor: '#007AFF',
       }}
     >
+      <Tab.Screen 
+        name="Today" 
+        component={TodayScreen} 
+        initialParams={{ projectId }}
+      />
+      <Tab.Screen 
+        name="Logs" 
+        component={DailyLogScreen} 
+        initialParams={{ projectId }}
+      />
+      <Tab.Screen 
+        name="Open Items" 
+        component={OpenItemsScreen} 
+        initialParams={{ projectId }}
+      />
+      <Tab.Screen 
+        name="Schedule" 
+        component={ScheduleScreen} 
+        initialParams={{ projectId }}
+      />
+      <Tab.Screen 
+        name="Docs" 
+        component={DocumentsScreen} 
+        initialParams={{ projectId }}
+      />
       <Tab.Screen name="Projects" component={ProjectListScreen} />
-      <Tab.Screen name="Today" component={TodayScreen} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
-      <Tab.Screen name="Logs" component={DailyLogScreen} />
-      <Tab.Screen name="Open Items" component={OpenItemsScreen} />
-      <Tab.Screen name="Docs" component={DocumentsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
