@@ -38,6 +38,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
       responseType: AuthSession.ResponseType.Code,
+      usePKCE: false,
     },
     discovery
   );
