@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { COLORS, SPACING } from '../constants';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
+import { COLORS, SPACING, RADIUS } from '../constants';
 import { Card } from '../components/Card';
 import { Project } from '../types';
 import { amplitude } from '../config/amplitude';
@@ -21,11 +21,10 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
       setError(null);
       const data = await apiFetch('/api/projects');
       if (data && data.projects) {
-        // Map backend Project type to mobile Project type
         const mappedProjects: Project[] = data.projects.map((p: any) => ({
           id: p.id,
           name: p.name,
-          location: p.location || 'No location',
+          location: p.location || 'Unassigned Site',
           status: p.status,
           lastUpdated: new Date(p.updatedAt).toISOString().slice(0, 10),
         }));
@@ -33,7 +32,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
       }
     } catch (err) {
       console.error('Failed to fetch projects', err);
-      setError('Could not load projects. Check your connection.');
+      setError('Connection failed. Pulse check your server.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,53 +50,66 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
 
   const renderItem = ({ item }: { item: Project }) => (
     <TouchableOpacity
+      activeOpacity={0.8}
       style={styles.itemContainer}
       onPress={() => {
         amplitude.track('Project Selected', {
           project_id: item.id,
           project_name: item.name,
-          project_status: item.status,
         });
-        navigation.navigate('Today', { projectId: item.id });
+        navigation.navigate('MainTabs', { 
+          screen: 'Today', 
+          params: { projectId: item.id } 
+        });
       }}
     >
-      <Card title={item.name}>
+      <Card variant="solid">
+        <View style={styles.cardHeader}>
+          <Text style={styles.projectName}>{item.name}</Text>
+          <View style={[styles.badge, { backgroundColor: item.status === 'active' ? COLORS.success + '20' : COLORS.border }]}>
+            <Text style={[styles.badgeText, { color: item.status === 'active' ? COLORS.success : COLORS.textSecondary }]}>
+              {item.status}
+            </Text>
+          </View>
+        </View>
         <Text style={styles.locationText}>{item.location}</Text>
-        <Text style={styles.statusText}>Status: {item.status}</Text>
-        <Text style={styles.dateText}>Last Updated: {item.lastUpdated}</Text>
+        <View style={styles.footer}>
+          <Text style={styles.dateLabel}>Active Since</Text>
+          <Text style={styles.dateText}>{item.lastUpdated}</Text>
+        </View>
       </Card>
     </TouchableOpacity>
   );
 
-  if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Projects</Text>
-      {error && <Text style={styles.errorText}>{error}</Text>}
-      <FlatList
-        data={projects}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-        }
-        ListEmptyComponent={
-          !loading ? (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.subtitle}>Active Portfolios</Text>
+        <Text style={styles.header}>Project Lookahead</Text>
+      </View>
+      
+      {loading && !refreshing ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={projects}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+          ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No projects found.</Text>
+              <Text style={styles.emptyText}>No project records found.</Text>
+              <Text style={styles.emptySub}>Setup a project in Notion to begin.</Text>
             </View>
-          ) : null
-        }
-      />
-    </View>
+          }
+        />
+      )}
+    </SafeAreaView>
   );
 };
 
@@ -106,48 +118,103 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  headerContainer: {
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.md,
+  },
+  subtitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: COLORS.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: '950',
+    color: COLORS.ink,
+    letterSpacing: -1,
+  },
   centered: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    padding: SPACING.lg,
-  },
   listContent: {
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.xl,
   },
   itemContainer: {
-    marginBottom: SPACING.sm,
+    marginBottom: -8, // Tighter overlap
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  projectName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.ink,
+    flex: 1,
+    marginRight: 8,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   locationText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: 4,
+    fontWeight: '500',
+    marginBottom: 16,
   },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    textTransform: 'uppercase',
   },
   dateText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.ink,
   },
   errorText: {
     color: COLORS.error,
     textAlign: 'center',
     marginVertical: SPACING.md,
+    fontWeight: '700',
   },
   emptyContainer: {
     padding: SPACING.xl,
     alignItems: 'center',
+    marginTop: 40,
   },
   emptyText: {
-    color: COLORS.textSecondary,
-    fontSize: 16,
+    color: COLORS.ink,
+    fontSize: 18,
+    fontWeight: '800',
   },
+  emptySub: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    marginTop: 8,
+  }
 });

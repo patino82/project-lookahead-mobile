@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Alert, ActivityIndicator, SafeAreaView, Platform, Image } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CustomButton } from '../components/CustomButton';
-import { COLORS, SPACING } from '../constants';
+import { COLORS, SPACING, RADIUS } from '../constants';
 import { amplitude } from '../config/amplitude';
 import { ENV } from '../config/env';
+import { Ionicons } from '@expo/vector-icons';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -14,7 +15,6 @@ interface LoginScreenProps {
   navigation: any;
 }
 
-// Discovery document for Google
 const discovery = {
   authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
@@ -34,123 +34,149 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       clientId: CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      responseType: AuthSession.ResponseType.IdToken,
-      extraParams: { nonce: 'nonce' },
     },
     discovery
   );
 
   useEffect(() => {
+    checkExistingSession();
+  }, []);
+
+  useEffect(() => {
     if (response?.type === 'success') {
-      const { id_token } = response.params as any;
-      if (id_token) {
-        exchangeTokenWithBackend(id_token);
-      } else {
-        Alert.alert('Authentication error', 'No id_token returned from provider');
-      }
-    } else if (response?.type === 'error') {
-      Alert.alert('Authentication error', 'Unable to authenticate with provider');
+      const { id_token } = response.params;
+      handleTokenExchange(id_token);
     }
   }, [response]);
 
-  async function exchangeTokenWithBackend(idToken: string) {
+  const checkExistingSession = async () => {
+    const token = await AsyncStorage.getItem('accessToken');
+    if (token) {
+      navigation.replace('MainTabs');
+    }
+  };
+
+  const handleTokenExchange = async (idToken: string) => {
     try {
-      // Exchange the provider token with backend to establish a NextAuth session.
-      // Backend is expected to verify the idToken and set a session cookie or return an access token.
       const res = await fetch(`${BACKEND_BASE}/api/auth/exchange`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
-        // include credentials so cookies set by the backend are stored
-        // This allows cookie-based sessions to be established by the server.
-        credentials: 'include',
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        console.warn('Backend exchange failed:', res.status, text);
-        Alert.alert('Login failed', 'Unable to establish session with backend');
-        return;
+      const data = await res.json();
+      if (data.ok && data.token) {
+        await AsyncStorage.setItem('accessToken', data.token);
+        amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
+        navigation.replace('MainTabs');
+      } else {
+        throw new Error(data.error || 'Exchange failed');
       }
-
-      // Backend may either set a cookie-based session (credentials: 'include') or
-      // return a JWT/access token in the JSON response. Handle both:
-      let handled = false;
-      try {
-        const data = await res.json();
-        if (data?.accessToken || data?.token) {
-          const token = data.accessToken || data.token;
-          await AsyncStorage.setItem('accessToken', token);
-          await AsyncStorage.setItem('sessionType', 'jwt');
-          handled = true;
-        }
-      } catch (_) {
-        // If response is not JSON, it may be a cookie-based session; we'll treat that as success.
-      }
-
-      if (!handled) {
-        // Mark that we expect a cookie-based session (server-set cookie).
-        // Note: on native, cookie persistence depends on environment; when using Expo proxy
-        // with fetch(..., credentials: 'include') cookies should be forwarded to the dev server.
-        await AsyncStorage.setItem('sessionType', 'cookie');
-      }
-
-      amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
-
-      // Navigate into the app
-      navigation.replace('MainTabs');
     } catch (err) {
-      console.error('exchangeTokenWithBackend error', err);
-      Alert.alert('Login failed', 'Network error while contacting backend');
+      console.error('Exchange error', err);
+      Alert.alert('Authentication error', 'Unable to sync with central server.');
     }
-  }
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.innerContainer}>
-        <Text style={styles.title}>Project Lookahead</Text>
-        <Text style={styles.subtitle}>Sign in with Google to continue</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logo}>
+            <Ionicons name="flash" size={40} color="#fff" />
+          </View>
+          <Text style={styles.brandName}>PROJECT LOOKAHEAD</Text>
+          <Text style={styles.tagline}>KINETIC FIELD COMMAND</Text>
+        </View>
 
-        <View style={styles.form}>
-          {!request ? (
-            <ActivityIndicator />
-          ) : (
-            <CustomButton
-              title="Continue with Google"
-              onPress={() => promptAsync({ useProxy: true })}
-            />
-          )}
+        <View style={styles.formContainer}>
+          <Text style={styles.welcomeText}>Welcome back, Agent</Text>
+          <Text style={styles.instruction}>Secure authentication required for field operations.</Text>
+          
+          <CustomButton 
+            title="Continue with Google"
+            onPress={() => promptAsync()}
+            disabled={!request}
+            style={styles.loginButton}
+          />
+          
+          <Text style={styles.footerNote}>Protected by Bespoke Services Intelligence</Text>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#111827', // Deep Navy
+  },
+  content: {
+    flex: 1,
+    padding: SPACING.xl,
     justifyContent: 'center',
-    padding: SPACING.lg,
-  },
-  innerContainer: {
     alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: COLORS.brand,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: COLORS.brand,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  brandName: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1,
+  },
+  tagline: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: 'rgba(255, 255, 255, 0.4)',
+    letterSpacing: 4,
+    marginTop: 8,
+  },
+  formContainer: {
     width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  welcomeText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  instruction: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.5)',
     textAlign: 'center',
+    marginBottom: 40,
+    lineHeight: 20,
   },
-  subtitle: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginBottom: SPACING.xl,
-    marginTop: SPACING.sm,
-  },
-  form: {
+  loginButton: {
     width: '100%',
+    backgroundColor: '#fff',
   },
+  footerNote: {
+    marginTop: 40,
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255, 255, 255, 0.2)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  }
 });

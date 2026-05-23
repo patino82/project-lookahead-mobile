@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS } from '../constants';
 import { amplitude } from '../config/amplitude';
 
 import { LoginScreen } from '../screens/LoginScreen';
@@ -21,38 +23,75 @@ function MainTabs({ route }: any) {
 
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: '#007AFF',
-      }}
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: COLORS.primary,
+        tabBarInactiveTintColor: COLORS.textSecondary,
+        tabBarStyle: {
+          backgroundColor: '#fff',
+          borderTopWidth: 1,
+          borderTopColor: COLORS.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '800',
+          textTransform: 'uppercase',
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: any;
+
+          if (route.name === 'Today') {
+            iconName = focused ? 'flash' : 'flash-outline';
+          } else if (route.name === 'Logs') {
+            iconName = focused ? 'document-text' : 'document-text-outline';
+          } else if (route.name === 'Open Items') {
+            iconName = focused ? 'alert-circle' : 'alert-circle-outline';
+          } else if (route.name === 'Projects') {
+            iconName = focused ? 'briefcase' : 'briefcase-outline';
+          } else if (route.name === 'Schedule') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Docs') {
+            iconName = focused ? 'folder' : 'folder-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
+          }
+
+          return <Ionicons name={iconName} size={20} color={color} />;
+        },
+      })}
     >
+      <Tab.Screen 
+        name="Projects" 
+        component={ProjectListScreen} 
+        options={{ title: 'Portfolios' }}
+      />
       <Tab.Screen 
         name="Today" 
         component={TodayScreen} 
         initialParams={{ projectId }}
+        options={{ title: 'Kinetic' }}
       />
       <Tab.Screen 
         name="Logs" 
         component={DailyLogScreen} 
         initialParams={{ projectId }}
+        options={{ title: 'Capture' }}
       />
       <Tab.Screen 
         name="Open Items" 
         component={OpenItemsScreen} 
         initialParams={{ projectId }}
+        options={{ title: 'Blockers' }}
       />
       <Tab.Screen 
         name="Schedule" 
         component={ScheduleScreen} 
         initialParams={{ projectId }}
+        options={{ title: 'Timeline' }}
       />
-      <Tab.Screen 
-        name="Docs" 
-        component={DocumentsScreen} 
-        initialParams={{ projectId }}
-      />
-      <Tab.Screen name="Projects" component={ProjectListScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
