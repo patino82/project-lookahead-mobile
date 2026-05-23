@@ -34,6 +34,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       clientId: CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
+      responseType: 'id_token',
     },
     discovery
   );
@@ -72,9 +73,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       } else {
         throw new Error(data.error || 'Exchange failed');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Exchange error', err);
-      Alert.alert('Authentication error', 'Unable to sync with central server.');
+      Alert.alert('Authentication error', `Server Response: ${err.message || 'Unknown'}`);
     }
   };
 

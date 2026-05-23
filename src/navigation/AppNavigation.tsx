@@ -28,17 +28,18 @@ function MainTabs({ route }: any) {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: '#111827', // Matching Cyber Dark theme
           borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopColor: 'rgba(255,255,255,0.05)',
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '800',
+          fontSize: 9,
+          fontWeight: '950',
           textTransform: 'uppercase',
+          letterSpacing: 1,
         },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: any;
@@ -50,47 +51,43 @@ function MainTabs({ route }: any) {
           } else if (route.name === 'Open Items') {
             iconName = focused ? 'alert-circle' : 'alert-circle-outline';
           } else if (route.name === 'Projects') {
-            iconName = focused ? 'briefcase' : 'briefcase-outline';
+            iconName = focused ? 'apps' : 'apps-outline';
           } else if (route.name === 'Schedule') {
             iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'Docs') {
-            iconName = focused ? 'folder' : 'folder-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
           }
 
-          return <Ionicons name={iconName} size={20} color={color} />;
+          return <Ionicons name={iconName} size={22} color={color} />;
         },
       })}
     >
       <Tab.Screen 
         name="Projects" 
         component={ProjectListScreen} 
-        options={{ title: 'Portfolios' }}
+        options={{ title: 'MISSIONS' }}
       />
       <Tab.Screen 
         name="Today" 
         component={TodayScreen} 
         initialParams={{ projectId }}
-        options={{ title: 'Kinetic' }}
+        options={{ title: 'KINETIC' }}
       />
       <Tab.Screen 
         name="Logs" 
         component={DailyLogScreen} 
         initialParams={{ projectId }}
-        options={{ title: 'Capture' }}
+        options={{ title: 'CAPTURE' }}
       />
       <Tab.Screen 
         name="Open Items" 
         component={OpenItemsScreen} 
         initialParams={{ projectId }}
-        options={{ title: 'Blockers' }}
+        options={{ title: 'DEBT' }}
       />
       <Tab.Screen 
         name="Schedule" 
         component={ScheduleScreen} 
         initialParams={{ projectId }}
-        options={{ title: 'Timeline' }}
+        options={{ title: 'TIMELINE' }}
       />
     </Tab.Navigator>
   );

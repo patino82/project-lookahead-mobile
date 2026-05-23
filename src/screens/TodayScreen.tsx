@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, 
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
 import { Card } from '../components/Card';
 import { apiFetch } from '../services/api';
-import { Zap, AlertCircle, Calendar, Info, ChevronRight } from 'lucide-react-native';
+import { Zap, AlertCircle, Calendar, Info, ChevronRight, Activity } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface TodayScreenProps {
@@ -27,7 +27,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
       }
     } catch (err) {
       console.error('Failed to fetch dashboard', err);
-      setError('System offline. Sync failed.');
+      setError('Operational sync failed.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,17 +48,23 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
 
   if (!projectId) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.emptyHeader}>
-           <Text style={styles.welcome}>FIELD COMMAND</Text>
-           <Text style={styles.mainTitle}>Mission Dashboard</Text>
-        </View>
-        <View style={styles.centered}>
-          <Zap size={64} color={COLORS.border} strokeWidth={1} />
-          <Text style={styles.emptyText}>NO ACTIVE SEQUENCE</Text>
-          <Text style={styles.emptySub}>Initialize a project mission from the Portfolios tab to view field intelligence.</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
+          style={StyleSheet.absoluteFill}
+        />
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.emptyHeader}>
+             <Text style={styles.welcome}>COMMAND STACK</Text>
+             <Text style={styles.mainTitle}>Field Dashboard</Text>
+          </View>
+          <View style={styles.centered}>
+            <Zap size={64} color={COLORS.border} strokeWidth={1} />
+            <Text style={styles.emptyText}>NO ACTIVE SEQUENCE</Text>
+            <Text style={styles.emptySub}>Initialize a project mission from the Portfolios tab to view field intelligence.</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -71,7 +77,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -90,39 +96,39 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
               <Text style={styles.metricValue}>{data?.effectiveComplete || 0}%</Text>
-              <Text style={styles.metricLabel}>SYNCED</Text>
+              <Text style={styles.metricLabel}>HEALTH</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
               <Text style={[styles.metricValue, data?.openInspectionCount > 0 && { color: COLORS.orange }]}>
                 {data?.openInspectionCount || 0}
               </Text>
-              <Text style={styles.metricLabel}>ALERTS</Text>
+              <Text style={styles.metricLabel}>RISKS</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
               <Text style={styles.metricValue}>{data?.criticalPathDays || 0}</Text>
-              <Text style={styles.metricLabel}>REMAINING</Text>
+              <Text style={styles.metricLabel}>DAYS</Text>
             </View>
           </View>
         </LinearGradient>
         
         <View style={styles.content}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>High Priority Comms</Text>
-            <AlertCircle size={16} color={COLORS.orange} />
+            <Text style={styles.sectionTitle}>High Priority Actions</Text>
+            <Zap size={14} color={COLORS.primary} />
           </View>
 
           {data?.callNowDetails.length > 0 ? (
             data.callNowDetails.map((task: any) => (
-              <TouchableOpacity key={task.taskId} activeOpacity={0.7}>
+              <TouchableOpacity key={task.taskId} activeOpacity={0.8}>
                 <Card variant="elevated" style={styles.actionCard}>
                   <View style={styles.actionCardInner}>
                     <View style={styles.actionIconBox}>
-                      <Zap size={18} color={COLORS.orange} fill={COLORS.orange} />
+                      <Activity size={18} color={COLORS.primary} />
                     </View>
                     <View style={styles.actionInfo}>
-                      <Text style={styles.actionName}>{task.taskName}</Text>
+                      <Text style={styles.actionName}>{task.taskName.toUpperCase()}</Text>
                       <Text style={styles.actionSub}>{task.ownerCompany}</Text>
                     </View>
                     <ChevronRight size={16} color={COLORS.border} />
@@ -132,13 +138,13 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
             ))
           ) : (
             <Card variant="outline" style={styles.quietCard}>
-              <Text style={styles.quietText}>Operational silence. All sequences current.</Text>
+              <Text style={styles.quietText}>Sequence optimal. No immediate actions.</Text>
             </Card>
           )}
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Intelligence Stream</Text>
-            <Info size={16} color={COLORS.primary} />
+            <Text style={styles.sectionTitle}>Command Intelligence</Text>
+            <Info size={14} color={COLORS.primary} />
           </View>
 
           <Card variant="elevated" style={styles.intelCard}>
@@ -150,12 +156,12 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
                 </View>
               ))
             ) : (
-              <Text style={styles.quietText}>No critical field intelligence reported.</Text>
+              <Text style={styles.quietText}>No field intelligence reports.</Text>
             )}
           </Card>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -169,8 +175,8 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   welcome: {
-    fontSize: 11,
-    fontWeight: '900',
+    fontSize: 10,
+    fontWeight: '950',
     color: COLORS.primary,
     letterSpacing: 2,
   },
@@ -184,25 +190,27 @@ const styles = StyleSheet.create({
     margin: SPACING.md,
     borderRadius: RADIUS.lg,
     padding: 24,
-    ...SHADOWS.medium,
+    ...SHADOWS.deep,
   },
   dateChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.full,
     alignSelf: 'flex-start',
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   dateChipText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
-    color: '#fff',
+    color: COLORS.textSecondary,
     letterSpacing: 1,
   },
   heroTitle: {
-    fontSize: 28,
-    fontWeight: '900',
+    fontSize: 26,
+    fontWeight: '950',
     color: '#fff',
     letterSpacing: -0.5,
     marginBottom: 32,
@@ -218,20 +226,20 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 24,
-    fontWeight: '900',
+    fontWeight: '950',
     color: '#fff',
   },
   metricLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginTop: 4,
-    letterSpacing: 0.5,
+    fontSize: 8,
+    fontWeight: '900',
+    color: COLORS.textSecondary,
+    marginTop: 6,
+    letterSpacing: 1,
   },
   metricDivider: {
     width: 1,
-    height: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    height: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   content: {
     paddingHorizontal: SPACING.md,
@@ -246,75 +254,79 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: COLORS.muted,
+    fontSize: 12,
+    fontWeight: '950',
+    color: COLORS.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   actionCard: {
-    padding: 12,
+    padding: 14,
     marginBottom: 8,
+    backgroundColor: COLORS.surface,
   },
   actionCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(224, 123, 53, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   actionInfo: {
     flex: 1,
   },
   actionName: {
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
     color: COLORS.ink,
+    letterSpacing: 0.2,
   },
   actionSub: {
-    fontSize: 12,
-    color: COLORS.muted,
-    fontWeight: '600',
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '700',
     marginTop: 2,
   },
   intelCard: {
-    padding: 20,
+    padding: 24,
+    backgroundColor: COLORS.surface,
   },
   intelItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 18,
   },
   intelBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: COLORS.primary,
-    marginTop: 7,
-    marginRight: 12,
+    marginTop: 9,
+    marginRight: 14,
   },
   intelText: {
     flex: 1,
     fontSize: 14,
     lineHeight: 22,
     color: COLORS.ink,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   quietCard: {
     padding: 32,
     alignItems: 'center',
     borderStyle: 'dashed',
+    borderColor: COLORS.border,
   },
   quietText: {
-    fontSize: 14,
-    color: COLORS.muted,
-    fontWeight: '500',
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
     textAlign: 'center',
   },
   centered: {
@@ -324,22 +336,26 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: '950',
     color: COLORS.ink,
     marginTop: 20,
+    letterSpacing: 1,
   },
   emptySub: {
-    fontSize: 14,
-    color: COLORS.muted,
+    fontSize: 13,
+    color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 50,
     marginTop: 10,
     lineHeight: 20,
+    fontWeight: '500',
   },
   errorText: {
     color: COLORS.error,
     textAlign: 'center',
     margin: SPACING.md,
-    fontWeight: '700',
+    fontWeight: '900',
+    fontSize: 11,
+    textTransform: 'uppercase',
   },
 });

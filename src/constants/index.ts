@@ -1,27 +1,23 @@
 export const COLORS = {
-  // Base
-  primary: '#2563eb', // Dynamic Blue
-  ink: '#0f172a',     // Slate 900
-  background: '#f8fafc', // Slate 50
-  surface: '#ffffff',
-  
-  // Accents
-  teal: '#0f5f54',
-  orange: '#f97316',
-  amber: '#f59e0b',
-  rose: '#e11d48',
-  emerald: '#10b981',
-  
-  // States
+  // Apex Construct Premium Palette
+  primary: '#e07b35',   // Brand Orange
+  secondary: '#f0944f', // Brand Soft Orange
+  background: '#0b0e12', // Cyber Dark
+  surface: 'rgba(22, 28, 36, 0.82)', 
+  ink: '#e6e9ec',       // Cyber White
+  text: '#e6e9ec',
+  textSecondary: '#7a8199', // Muted Blue/Gray
   error: '#ef4444',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  muted: '#64748b',   // Slate 500
-  border: '#e2e8f0',  // Slate 200
+  success: '#10b981',   // Emerald
+  warning: '#f59e0b',   // Amber
+  border: 'rgba(255, 255, 255, 0.08)', 
+  soft: '#11151c',
+  brand: '#e07b35',
   
-  // Gradients
-  heroGradient: ['#0f172a', '#1e293b'],
-  brandGradient: ['#2563eb', '#3b82f6'],
+  // High-Fidelity Gradients
+  heroGradient: ['#0b0e12', '#0f1319'],
+  brandGradient: ['#e07b35', '#f0944f'],
+  glassGradient: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)'],
 };
 
 export const SPACING = {
@@ -30,30 +26,30 @@ export const SPACING = {
   md: 16,
   lg: 24,
   xl: 32,
-  xxl: 48,
+  xxl: 60,
 };
 
 export const RADIUS = {
-  sm: 8,
-  md: 12,
-  lg: 20,
-  xl: 32,
+  sm: 12,
+  md: 20,
+  lg: 32,
+  xl: 44,
   full: 9999,
 };
 
 export const SHADOWS = {
+  deep: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 24 },
+    shadowOpacity: 0.45,
+    shadowRadius: 70,
+    elevation: 20,
+  },
   soft: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-    elevation: 2,
-  },
-  medium: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 36,
+    elevation: 10,
   },
 };

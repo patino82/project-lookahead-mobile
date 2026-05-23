@@ -5,7 +5,8 @@ import { Card } from '../components/Card';
 import { Project } from '../types';
 import { amplitude } from '../config/amplitude';
 import { apiFetch } from '../services/api';
-import { LayoutGrid, ChevronRight, MapPin, CalendarDays } from 'lucide-react-native';
+import { LayoutGrid, ChevronRight, MapPin, CalendarDays, Activity } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface ProjectListScreenProps {
   navigation: any;
@@ -33,7 +34,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
       }
     } catch (err) {
       console.error('Failed to fetch projects', err);
-      setError('System connection error. Manual refresh required.');
+      setError('Operational connection lost.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,7 +52,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
 
   const renderItem = ({ item }: { item: Project }) => (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.8}
       style={styles.itemContainer}
       onPress={() => {
         amplitude.track('Project Selected', {
@@ -67,12 +68,12 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
       <Card variant="elevated" style={styles.card}>
         <View style={styles.cardTop}>
           <View style={styles.iconBox}>
-            <LayoutGrid size={20} color={COLORS.primary} />
+            <Activity size={20} color={COLORS.primary} />
           </View>
           <View style={styles.titleInfo}>
-            <Text style={styles.projectName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.projectName}>{item.name.toUpperCase()}</Text>
             <View style={styles.statusRow}>
-              <View style={[styles.statusIndicator, { backgroundColor: item.status === 'active' ? COLORS.success : COLORS.muted }]} />
+              <View style={[styles.pulse, { backgroundColor: item.status === 'active' ? COLORS.success : COLORS.muted }]} />
               <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
             </View>
           </View>
@@ -81,12 +82,12 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
 
         <View style={styles.detailsGrid}>
           <View style={styles.detailItem}>
-            <MapPin size={12} color={COLORS.muted} />
+            <MapPin size={12} color={COLORS.textSecondary} />
             <Text style={styles.detailText}>{item.location}</Text>
           </View>
           <View style={styles.detailItem}>
-            <CalendarDays size={12} color={COLORS.muted} />
-            <Text style={styles.detailText}>Refreshed {item.lastUpdated}</Text>
+            <CalendarDays size={12} color={COLORS.textSecondary} />
+            <Text style={styles.detailText}>SEQ {item.lastUpdated}</Text>
           </View>
         </View>
       </Card>
@@ -94,41 +95,47 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerArea}>
-        <View>
-          <Text style={styles.welcome}>COMMAND CENTER</Text>
-          <Text style={styles.mainTitle}>Project Portfolios</Text>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.headerArea}>
+          <View>
+            <Text style={styles.welcome}>COMMAND CENTER</Text>
+            <Text style={styles.mainTitle}>Mission Control</Text>
+          </View>
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>DP</Text>
+          </View>
         </View>
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarText}>DP</Text>
-        </View>
-      </View>
-      
-      {loading && !refreshing ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={projects}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <LayoutGrid size={48} color={COLORS.border} strokeWidth={1} />
-              <Text style={styles.emptyText}>Zero Active Missions</Text>
-              <Text style={styles.emptySub}>Deploy a project sequence in Notion to populate this field list.</Text>
-            </View>
-          }
-        />
-      )}
-    </SafeAreaView>
+        
+        {loading && !refreshing ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={projects}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <LayoutGrid size={48} color={COLORS.border} strokeWidth={1} />
+                <Text style={styles.emptyText}>Zero Active Missions</Text>
+                <Text style={styles.emptySub}>Deploy a project sequence in Notion to populate this field list.</Text>
+              </View>
+            }
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -146,31 +153,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   welcome: {
-    fontSize: 11,
-    fontWeight: '900',
+    fontSize: 10,
+    fontWeight: '950',
     color: COLORS.primary,
     letterSpacing: 2,
     marginBottom: 4,
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
     color: COLORS.ink,
-    letterSpacing: -0.5,
+    letterSpacing: -1,
   },
   avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.ink,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOWS.soft,
   },
   avatarText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   centered: {
     flex: 1,
@@ -185,63 +191,69 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   card: {
-    padding: SPACING.md,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.background,
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: 'rgba(224, 123, 53, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   titleInfo: {
     flex: 1,
   },
   projectName: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '900',
     color: COLORS.ink,
-    marginBottom: 2,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  statusIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
+  pulse: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: COLORS.muted,
-    letterSpacing: 0.5,
+    fontSize: 9,
+    fontWeight: '950',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
   },
   detailsGrid: {
     flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 12,
+    marginTop: 20,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    gap: 20,
+    justifyContent: 'space-between',
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   detailText: {
-    fontSize: 12,
-    color: COLORS.muted,
-    fontWeight: '500',
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   emptyContainer: {
     padding: 60,
@@ -254,7 +266,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   emptySub: {
-    color: COLORS.muted,
+    color: COLORS.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     marginTop: 10,
