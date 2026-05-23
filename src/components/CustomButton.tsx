@@ -1,13 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, RADIUS } from '../constants';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
+import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface CustomButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  style?: any;
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  style?: ViewStyle;
+  textStyle?: TextStyle;
   disabled?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const CustomButton: React.FC<CustomButtonProps> = ({ 
@@ -15,50 +18,80 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   onPress, 
   variant = 'primary', 
   style,
-  disabled = false 
-}) => (
-  <TouchableOpacity 
-    style={[
-      styles.button, 
-      styles[variant], 
-      style,
-      disabled && styles.disabled
-    ]} 
-    onPress={onPress}
-    disabled={disabled}
-  >
-    <Text style={[
-      styles.buttonText, 
-      styles[`${variant}Text`],
-      disabled && styles.disabledText
-    ]}>{title}</Text>
-  </TouchableOpacity>
-);
+  textStyle,
+  disabled = false,
+  size = 'md'
+}) => {
+  const isGradient = variant === 'primary' || variant === 'secondary';
+  const gradientColors = variant === 'primary' ? COLORS.brandGradient : COLORS.heroGradient;
+
+  const ButtonWrapper: any = isGradient ? LinearGradient : View;
+  const wrapperProps = isGradient ? {
+    colors: gradientColors,
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 0 },
+  } : {};
+
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.8}
+      onPress={onPress}
+      disabled={disabled}
+      style={[
+        styles.touchable,
+        size === 'sm' && styles.sizeSm,
+        size === 'lg' && styles.sizeLg,
+        style
+      ]}
+    >
+      <ButtonWrapper 
+        {...wrapperProps}
+        style={[
+          styles.button, 
+          !isGradient && styles[variant],
+          disabled && styles.disabled
+        ]}
+      >
+        <Text style={[
+          styles.buttonText, 
+          styles[`${variant}Text`],
+          size === 'sm' && styles.textSm,
+          disabled && styles.disabledText,
+          textStyle
+        ]}>{title}</Text>
+      </ButtonWrapper>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
+  touchable: {
+    marginVertical: SPACING.xs,
+  },
   button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
     borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: SPACING.xs,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  sizeSm: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  sizeLg: {
+    paddingVertical: 18,
+    paddingHorizontal: 32,
   },
   primary: {
-    backgroundColor: COLORS.ink,
-    shadowColor: COLORS.ink,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 4,
+    // Handled by gradient
   },
   primaryText: {
     color: '#FFF',
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontWeight: '800',
   },
   secondary: {
-    backgroundColor: COLORS.primary,
+    // Handled by gradient
   },
   secondaryText: {
     color: '#FFF',
@@ -67,27 +100,37 @@ const styles = StyleSheet.create({
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: COLORS.ink,
+    borderColor: COLORS.border,
   },
   outlineText: {
     color: COLORS.ink,
-    fontWeight: '850',
+    fontWeight: '700',
   },
   ghost: {
     backgroundColor: 'transparent',
   },
   ghostText: {
-    color: COLORS.textSecondary,
+    color: COLORS.muted,
     fontWeight: '600',
   },
+  danger: {
+    backgroundColor: COLORS.error,
+  },
+  dangerText: {
+    color: '#FFF',
+    fontWeight: '700',
+  },
   buttonText: {
-    fontSize: 14,
-    textTransform: 'uppercase',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  textSm: {
+    fontSize: 13,
   },
   disabled: {
     opacity: 0.5,
   },
   disabledText: {
-    color: COLORS.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
   }
 });

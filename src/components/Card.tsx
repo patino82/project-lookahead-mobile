@@ -1,22 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SPACING, RADIUS } from '../constants';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
 
 interface CardProps {
   title?: string;
+  subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  variant?: 'glass' | 'solid';
+  variant?: 'flat' | 'elevated' | 'outline';
+  style?: ViewStyle;
 }
 
-export const Card: React.FC<CardProps> = ({ title, children, footer, variant = 'glass' }) => (
+export const Card: React.FC<CardProps> = ({ 
+  title, 
+  subtitle,
+  children, 
+  footer, 
+  variant = 'elevated',
+  style 
+}) => (
   <View style={[
     styles.card, 
-    variant === 'solid' ? styles.solid : styles.glass
+    styles[variant],
+    style
   ]}>
-    {title && (
+    {(title || subtitle) && (
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        {title && <Text style={styles.title}>{title}</Text>}
+        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
     )}
     <View style={styles.content}>{children}</View>
@@ -28,41 +39,41 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
-    marginVertical: SPACING.sm,
-    marginHorizontal: SPACING.md,
+    backgroundColor: COLORS.surface,
+  },
+  flat: {
+    backgroundColor: COLORS.background,
+  },
+  elevated: {
+    ...SHADOWS.soft,
+  },
+  outline: {
     borderWidth: 1,
     borderColor: COLORS.border,
-  },
-  glass: {
-    backgroundColor: COLORS.surface,
-    // Note: real glassmorphism in RN requires Expo Blur, 
-    // using rgba background for cross-platform compatibility
-  },
-  solid: {
-    backgroundColor: COLORS.cardSolid,
-    shadowColor: '#1f1a12',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.09,
-    shadowRadius: 36,
-    elevation: 5,
   },
   header: {
     marginBottom: SPACING.md,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.ink,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
+  subtitle: {
+    fontSize: 12,
+    color: COLORS.muted,
+    marginTop: 2,
+    fontWeight: '500',
+  },
   content: {
-    flex: 1,
+    flexShrink: 1,
   },
   footer: {
     marginTop: SPACING.md,
+    paddingTop: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    paddingTop: SPACING.md,
   },
 });
