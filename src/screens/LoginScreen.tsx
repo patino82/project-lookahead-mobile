@@ -30,37 +30,44 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     preferLocalhost: true,
   });
 
-  console.log('Redirect URI:', redirectUri);
-
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: CLIENT_ID,
-      scopes: ['openid', 'profile', 'email'],
-      redirectUri,
-      responseType: AuthSession.ResponseType.Code,
-      usePKCE: false,
-    },
-    discovery
-  );
-
   useEffect(() => {
     checkExistingSession();
   }, []);
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { code } = response.params;
-      console.log('Code received, exchanging...');
-      handleCodeExchange(code);
-    } else if (response?.type === 'error' || response?.type === 'cancel') {
-      console.log('Login event:', response.type, response);
-    }
-  }, [response]);
 
   const checkExistingSession = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     if (token) {
       navigation.replace('MainTabs');
+    }
+  };
+
+  const handleLogin = async () => {
+    // Manually construct the URL to ensure NO PKCE parameters are sent
+    const state = Math.random().toString(36).substring(7);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${encodeURIComponent('openid profile email')}&` +
+      `state=${state}&` +
+      `prompt=select_account`;
+
+    console.log('Opening Auth URL:', authUrl);
+
+    try {
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const code = url.searchParams.get('code');
+        if (code) {
+          console.log('Code captured, exchanging...');
+          handleCodeExchange(code);
+        }
+      }
+    } catch (err) {
+      console.error('Auth error', err);
+      Alert.alert('Login Error', 'Failed to start secure session.');
     }
   };
 
@@ -106,8 +113,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           
           <CustomButton 
             title="Continue with Google"
-            onPress={() => promptAsync()}
-            disabled={!request}
+            onPress={handleLogin}
             style={styles.loginButton}
           />
           
