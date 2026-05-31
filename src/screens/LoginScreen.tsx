@@ -3,9 +3,8 @@ import { View, Text, StyleSheet, Alert, ActivityIndicator, SafeAreaView } from '
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Zap } from 'lucide-react-native';
-import { CustomButton } from '../components/CustomButton';
-import { COLORS, SPACING, RADIUS } from '../constants';
+import { Zap, Mail } from 'lucide-react-native';
+import { COLORS, SPACING } from '../constants';
 import { amplitude } from '../config/amplitude';
 import { ENV } from '../config/env';
 
@@ -52,7 +51,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         handleCodeExchange(code);
       }
     } else if (response?.type === 'error') {
-      Alert.alert('Login Error', response.error?.message || 'Failed to authenticate');
+      Alert.alert(
+        'Login Failed',
+        'We couldn\'t sign you in. Please try again.'
+      );
     }
   }, [response]);
 
@@ -70,8 +72,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const handleLogin = async () => {
     try {
       await promptAsync();
-    } catch (err: any) {
-      Alert.alert('Login Error', err.message || 'Failed to start authentication.');
+    } catch {
+      Alert.alert(
+        'Login Failed',
+        'We couldn\'t start the sign-in process. Please try again.'
+      );
     }
   };
 
@@ -95,8 +100,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       } else {
         throw new Error(data.error || 'Exchange failed');
       }
-    } catch (err: any) {
-      Alert.alert('Authentication Error', `Server Response: ${err.message || 'Unknown'}`);
+    } catch {
+      Alert.alert(
+        'Connection Error',
+        'Unable to complete sign in. Please check your connection and try again.'
+      );
     } finally {
       setExchanging(false);
     }
@@ -105,29 +113,41 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        {/* Logo Area */}
         <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Zap size={48} color="#fff" />
+          <View style={styles.logoGlow}>
+            <View style={styles.logo}>
+              <Zap size={56} color={COLORS.brand} />
+            </View>
           </View>
           <Text style={styles.brandName}>PROJECT LOOKAHEAD</Text>
           <Text style={styles.tagline}>FIELD COMMAND</Text>
         </View>
 
+        {/* Sign-In Area */}
         <View style={styles.formContainer}>
           {exchanging ? (
             <View style={styles.exchangingWrap}>
               <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={styles.exchangingText}>Establishing secure session...</Text>
+              <Text style={styles.exchangingText}>Signing in...</Text>
             </View>
           ) : (
-            <CustomButton
-              title="Continue with Google"
-              onPress={handleLogin}
-              style={styles.loginButton}
-            />
+            <View style={styles.googleButtonWrapper}>
+              <View
+                style={styles.googleButton}
+                onTouchEnd={handleLogin}
+              >
+                <View style={styles.googleIconCircle}>
+                  <Text style={styles.googleIconText}>G</Text>
+                </View>
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </View>
+            </View>
           )}
 
-          <Text style={styles.footerNote}>Protected by Project Lookahead</Text>
+          <Text style={styles.termsText}>
+            By continuing, you agree to our Terms of Service
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -141,40 +161,46 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: SPACING.xl,
+    paddingHorizontal: SPACING.xl,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 80,
   },
-  logo: {
+  logoGlow: {
     width: 100,
     height: 100,
     borderRadius: 28,
-    backgroundColor: COLORS.brand,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: COLORS.surfaceSolid,
     shadowColor: COLORS.brand,
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 10,
+    marginBottom: SPACING.xl,
+    borderWidth: 2,
+    borderColor: COLORS.brand,
+  },
+  logo: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   brandName: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '900',
     color: COLORS.ink,
-    letterSpacing: 1,
+    letterSpacing: 2,
+    marginBottom: SPACING.sm,
   },
   tagline: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: COLORS.textSecondary,
     letterSpacing: 4,
-    marginTop: 8,
   },
   formContainer: {
     width: '100%',
@@ -183,23 +209,58 @@ const styles = StyleSheet.create({
   },
   exchangingWrap: {
     alignItems: 'center',
-    gap: 16,
-    paddingVertical: 20,
+    gap: SPACING.md,
+    paddingVertical: SPACING.xl,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   exchangingText: {
     color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '600',
   },
-  loginButton: {
+  googleButtonWrapper: {
     width: '100%',
   },
-  footerNote: {
-    marginTop: 40,
-    fontSize: 10,
-    fontWeight: '800',
-    color: 'rgba(255, 255, 255, 0.2)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.lg,
+    minHeight: 44,
+    gap: SPACING.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  googleIconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4285F4',
+  },
+  googleIconText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  termsText: {
+    marginTop: SPACING.xl,
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.3)',
+    textAlign: 'center',
   },
 });
