@@ -6,24 +6,24 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2E7D32"
+      "backgroundColor": "#0b0e12"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.projectlookahead.app",
+      "bundleIdentifier": "com.projectlookahead.mobile",
       "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2E7D32"
+        "backgroundColor": "#0b0e12"
       },
-      "package": "com.projectlookahead.app",
+      "package": "com.projectlookahead.mobile",
       "versionCode": 1
     },
     "web": {

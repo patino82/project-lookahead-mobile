@@ -2,8 +2,28 @@ export interface Project {
   id: string;
   name: string;
   location: string;
-  status: 'active' | 'completed' | 'on-hold';
+  status: string;
   lastUpdated: string;
+  _count?: {
+    tasks: number;
+    taskStatuses: number;
+    lookahead: number;
+  };
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  location?: string;
+  estimatedTime?: number;
+  completed?: boolean;
+  dueDate?: string;
+  phase?: string;
+  trade?: string;
+  ownerCompany?: string;
 }
 
 export interface LogEntry {
@@ -18,18 +38,56 @@ export interface OpenItem {
   id: string;
   projectId: string;
   description: string;
-  priority: 'low' | 'medium' | 'high';
-  dueDate: string;
-  status: 'open' | 'closed';
+  priority: string;
+  dueDate: string | null;
+  status: string;
+  createdAt?: string;
 }
 
-export interface ScheduleItem {
-  id: string;
+export interface ScheduleEntry {
+  taskId: string;
+  taskName: string;
+  phase: string | null;
+  trade: string | null;
+  ownerCompany: string;
+  days: Array<{
+    date: string;
+    label: string;
+    symbol: string;
+  }>;
+}
+
+export interface LookaheadData {
+  legend: Record<string, string>;
+  weekDates: string[];
+  matrix: ScheduleEntry[];
+}
+
+export interface DashboardSummary {
   projectId: string;
-  task: string;
-  startTime: string;
-  endTime: string;
-  date: string;
+  projectName: string;
+  thisWeekStart: string;
+  effectiveComplete: number;
+  totalTasks: number;
+  unlocked: number;
+  blocked: number;
+  callNow: number;
+  openInspectionCount: number;
+  healthScore: number;
+  criticalPathTaskIds: string[];
+  criticalPathDays: number;
+  callNowDetails: Array<{
+    taskId: string;
+    taskName: string;
+    ownerCompany: string;
+    contacts: Array<{
+      company: string;
+      name: string;
+      phone?: string | null;
+      email?: string | null;
+    }>;
+  }>;
+  assistantActions: string[];
 }
 
 export interface User {

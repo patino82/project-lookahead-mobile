@@ -1,166 +1,179 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, SafeAreaView, TouchableOpacity, Platform } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
-import { Card } from '../components/Card';
-import { apiFetch } from '../services/api';
-import { Zap, AlertCircle, Calendar, Info, ChevronRight, Activity } from 'lucide-react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView, Dimensions } from 'react-native';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CustomButton } from '../components/CustomButton';
+import { TaskCard } from '../components/TaskCard';
+import { quickBooks } from '../data/quickbooks';
+import { apiFetch } from '../services/api';
+import { amplitude } from '../config/amplitude';
+import { Task } from '../types';
+
+import { Home, Calendar, FileText, AlertCircle, ClipboardList, Bell, CheckCircle, CheckCheck, Zap } from 'lucide-react-native';
+const { width } = Dimensions.get('window');
 
 interface TodayScreenProps {
   route: any;
+  navigation: any;
 }
 
-export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
+interface DashboardData {
+  stats: {
+    active: number;
+    completed: number;
+    overdue: number;
+    inspections: number;
+  };
+  tasks: Task[];
+  schedule: any[];
+}
+
+export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) => {
   const { projectId } = route.params || {};
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboard = async () => {
-    if (!projectId) return;
+  const fetchDashboard = useCallback(async () => {
     try {
       setError(null);
-      const summary = await apiFetch(`/api/projects/${projectId}/dashboard`);
-      if (summary) {
-        setData(summary);
-      }
-    } catch (err) {
-      console.error('Failed to fetch dashboard', err);
-      setError('Operational sync failed.');
+      const result = await apiFetch(`/api/dashboard/${projectId || 'default'}`);
+      setData(result);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load dashboard.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    if (projectId) {
-      setLoading(true);
-      fetchDashboard();
-    }
-  }, [projectId]);
+    fetchDashboard();
+  }, [fetchDashboard]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchDashboard();
   };
 
-  if (!projectId) {
+  const getStatIcon = (iconName: string, size: number, color: string) => {
+    switch (iconName) {
+      case 'flash-outline': return <Zap size={size} color={color} />;
+      case 'checkmark-circle-outline': return <CheckCircle size={size} color={color} />;
+      case 'alert-circle-outline': return <AlertCircle size={size} color={color} />;
+      case 'clipboard-outline': return <ClipboardList size={size} color={color} />;
+      default: return <Zap size={size} color={color} />;
+    }
+  };
+
+  const statsConfig = data ? [
+    { key: 'active', label: 'Active', value: data.stats.active, icon: 'flash-outline' as const, color: COLORS.primary },
+    { key: 'completed', label: 'Done', value: data.stats.completed, icon: 'checkmark-circle-outline' as const, color: COLORS.success },
+    { key: 'overdue', label: 'Overdue', value: data.stats.overdue, icon: 'alert-circle-outline' as const, color: COLORS.rose },
+    { key: 'inspections', label: 'Inspections', value: data.stats.inspections, icon: 'clipboard-outline' as const, color: COLORS.amber },
+  ] : [];
+
+  const renderTaskItem = ({ item }: { item: Task }) => (
+    <TaskCard task={item} projectId={projectId} />
+  );
+
+  if (loading && !refreshing) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
-          style={StyleSheet.absoluteFill}
-        />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.emptyHeader}>
-             <Text style={styles.welcome}>COMMAND STACK</Text>
-             <Text style={styles.mainTitle}>Field Dashboard</Text>
-          </View>
-          <View style={styles.centered}>
-            <Zap size={64} color={COLORS.border} strokeWidth={1} />
-            <Text style={styles.emptyText}>NO ACTIVE SEQUENCE</Text>
-            <Text style={styles.emptySub}>Initialize a project mission from the Portfolios tab to view field intelligence.</Text>
-          </View>
-        </SafeAreaView>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
       </View>
     );
   }
 
-  if (loading && !refreshing) {
+  if (error) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="small" color={COLORS.primary} />
-      </SafeAreaView>
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <CustomButton title="Retry" onPress={fetchDashboard} />
+      </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-        }
-      >
-        <LinearGradient
-          colors={COLORS.heroGradient}
-          style={styles.heroSection}
-        >
-          <View style={styles.dateChip}>
-            <Text style={styles.dateChipText}>{data?.thisWeekStart?.toUpperCase() || 'LIVE'}</Text>
+      <LinearGradient
+        colors={['rgba(224, 123, 53, 0.04)', 'transparent']}
+        style={StyleSheet.absoluteFill}
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>DASHBOARD</Text>
+            <Text style={styles.title}>Today</Text>
+            <Text style={styles.dateLabel}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
           </View>
-          <Text style={styles.heroTitle}>{data?.projectName?.toUpperCase() || "DASHBOARD"}</Text>
-          
-          <View style={styles.metricsGrid}>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricValue}>{data?.effectiveComplete || 0}%</Text>
-              <Text style={styles.metricLabel}>HEALTH</Text>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, data?.openInspectionCount > 0 && { color: COLORS.orange }]}>
-                {data?.openInspectionCount || 0}
-              </Text>
-              <Text style={styles.metricLabel}>RISKS</Text>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <Text style={styles.metricValue}>{data?.criticalPathDays || 0}</Text>
-              <Text style={styles.metricLabel}>DAYS</Text>
-            </View>
-          </View>
-        </LinearGradient>
-        
-        <View style={styles.content}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>High Priority Actions</Text>
-            <Zap size={14} color={COLORS.primary} />
-          </View>
-
-          {data?.callNowDetails.length > 0 ? (
-            data.callNowDetails.map((task: any) => (
-              <TouchableOpacity key={task.taskId} activeOpacity={0.8}>
-                <Card variant="elevated" style={styles.actionCard}>
-                  <View style={styles.actionCardInner}>
-                    <View style={styles.actionIconBox}>
-                      <Activity size={18} color={COLORS.primary} />
-                    </View>
-                    <View style={styles.actionInfo}>
-                      <Text style={styles.actionName}>{task.taskName.toUpperCase()}</Text>
-                      <Text style={styles.actionSub}>{task.ownerCompany}</Text>
-                    </View>
-                    <ChevronRight size={16} color={COLORS.border} />
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Card variant="outline" style={styles.quietCard}>
-              <Text style={styles.quietText}>Sequence optimal. No immediate actions.</Text>
-            </Card>
-          )}
-
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Command Intelligence</Text>
-            <Info size={14} color={COLORS.primary} />
-          </View>
-
-          <Card variant="elevated" style={styles.intelCard}>
-            {data?.assistantActions.length > 0 ? (
-              data.assistantActions.map((action: string, i: number) => (
-                <View key={i} style={styles.intelItem}>
-                  <View style={styles.intelBullet} />
-                  <Text style={styles.intelText}>{action}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.quietText}>No field intelligence reports.</Text>
-            )}
-          </Card>
+          <TouchableOpacity style={styles.notificationBtn} onPress={() => {}}>
+            <Bell size={22} color={COLORS.ink} />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        <FlatList
+          data={data?.tasks || []}
+          renderItem={renderTaskItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+          }
+          ListHeaderComponent={
+            <View>
+              {/* Stats Row */}
+              <View style={styles.statsRow}>
+                {statsConfig.map((stat) => (
+                  <View key={stat.key} style={styles.statCard}>
+                    <View style={[styles.statIcon, { backgroundColor: `${stat.color}15` }]}>
+                      {getStatIcon(stat.icon, 18, stat.color)}
+                    </View>
+                    <Text style={styles.statValue}>{stat.value}</Text>
+                    <Text style={styles.statLabel}>{stat.label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Quick Books */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Quick Books</Text>
+              </View>
+              <FlatList
+                horizontal
+                data={quickBooks}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.quickBookCard}>
+                    <Text style={styles.quickBookTitle}>{item.title}</Text>
+                    <Text style={styles.quickBookCount}>{item.taskCount} tasks</Text>
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item.id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickBooksList}
+              />
+
+              {/* Today's Tasks */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Today's Tasks</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Schedule')}>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <CheckCheck size={48} color={COLORS.border} />
+              <Text style={styles.emptyText}>All Caught Up!</Text>
+              <Text style={styles.emptySub}>No tasks scheduled for today.</Text>
+            </View>
+          }
+        />
+      </SafeAreaView>
     </View>
   );
 };
@@ -170,192 +183,145 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  emptyHeader: {
-    padding: SPACING.lg,
-    paddingTop: 20,
-  },
-  welcome: {
-    fontSize: 10,
-    fontWeight: '950',
-    color: COLORS.primary,
-    letterSpacing: 2,
-  },
-  mainTitle: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: COLORS.ink,
-    marginTop: 4,
-  },
-  heroSection: {
-    margin: SPACING.md,
-    borderRadius: RADIUS.lg,
-    padding: 24,
-    ...SHADOWS.deep,
-  },
-  dateChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  dateChipText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: '950',
-    color: '#fff',
-    letterSpacing: -0.5,
-    marginBottom: 32,
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metricItem: {
+  centerContainer: {
     flex: 1,
-    alignItems: 'center',
-  },
-  metricValue: {
-    fontSize: 24,
-    fontWeight: '950',
-    color: '#fff',
-  },
-  metricLabel: {
-    fontSize: 8,
-    fontWeight: '900',
-    color: COLORS.textSecondary,
-    marginTop: 6,
-    letterSpacing: 1,
-  },
-  metricDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  content: {
-    paddingHorizontal: SPACING.md,
-    paddingBottom: 40,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginTop: 24,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '950',
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-  },
-  actionCard: {
-    padding: 14,
-    marginBottom: 8,
-    backgroundColor: COLORS.surface,
-  },
-  actionCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(224, 123, 53, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  actionInfo: {
-    flex: 1,
-  },
-  actionName: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: COLORS.ink,
-    letterSpacing: 0.2,
-  },
-  actionSub: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  intelCard: {
-    padding: 24,
-    backgroundColor: COLORS.surface,
-  },
-  intelItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 18,
-  },
-  intelBullet: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.primary,
-    marginTop: 9,
-    marginRight: 14,
-  },
-  intelText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.ink,
-    fontWeight: '600',
-  },
-  quietCard: {
-    padding: 32,
-    alignItems: 'center',
-    borderStyle: 'dashed',
-    borderColor: COLORS.border,
-  },
-  quietText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  centered: {
-    flex: 1,
+    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '950',
-    color: COLORS.ink,
-    marginTop: 20,
-    letterSpacing: 1,
-  },
-  emptySub: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 50,
-    marginTop: 10,
-    lineHeight: 20,
-    fontWeight: '500',
+    gap: SPACING.md,
   },
   errorText: {
     color: COLORS.error,
-    textAlign: 'center',
-    margin: SPACING.md,
+    fontSize: FONT_SIZE.md,
+    fontWeight: '700',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: 20,
+    paddingBottom: SPACING.md,
+  },
+  greeting: {
+    fontSize: 10,
     fontWeight: '900',
+    color: COLORS.primary,
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  title: {
+    fontSize: FONT_SIZE.xxl,
+    fontWeight: '900',
+    color: COLORS.ink,
+  },
+  dateLabel: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  notificationBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: COLORS.surfaceSolid,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listContent: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 40,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: SPACING.lg,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceSolid,
+    borderRadius: RADIUS.md,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.ink,
+  },
+  statLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
+  },
+  seeAll: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
+  quickBooksList: {
+    paddingBottom: SPACING.lg,
+  },
+  quickBookCard: {
+    width: 140,
+    backgroundColor: COLORS.surfaceSolid,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginRight: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  quickBookTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.ink,
+    marginBottom: 4,
+  },
+  quickBookCount: {
     fontSize: 11,
-    textTransform: 'uppercase',
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.ink,
+    marginTop: SPACING.md,
+  },
+  emptySub: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
   },
 });

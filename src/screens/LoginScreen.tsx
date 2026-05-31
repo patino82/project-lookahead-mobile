@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator, SafeAreaView, Platform, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Zap } from 'lucide-react-native';
 import { CustomButton } from '../components/CustomButton';
 import { COLORS, SPACING, RADIUS } from '../constants';
 import { amplitude } from '../config/amplitude';
 import { ENV } from '../config/env';
-import { Ionicons } from '@expo/vector-icons';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,61 +24,66 @@ const discovery = {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const BACKEND_BASE = ENV.API_BASE;
   const CLIENT_ID = ENV.GOOGLE_CLIENT_ID;
+  const [exchanging, setExchanging] = useState(false);
 
   const redirectUri = AuthSession.makeRedirectUri({
     path: '/',
     preferLocalhost: true,
   });
 
+  const [request, response, promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: CLIENT_ID,
+      scopes: ['openid', 'profile', 'email'],
+      redirectUri,
+      usePKCE: false,
+    },
+    discovery
+  );
+
   useEffect(() => {
     checkExistingSession();
   }, []);
 
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { code } = response.params;
+      if (code) {
+        handleCodeExchange(code);
+      }
+    } else if (response?.type === 'error') {
+      Alert.alert('Login Error', response.error?.message || 'Failed to authenticate');
+    }
+  }, [response]);
+
   const checkExistingSession = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    if (token) {
-      navigation.replace('MainTabs');
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (token) {
+        navigation.replace('MainTabs');
+      }
+    } catch {
+      // stay on login
     }
   };
 
   const handleLogin = async () => {
-    // Manually construct the URL to ensure NO PKCE parameters are sent
-    const state = Math.random().toString(36).substring(7);
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=code&` +
-      `scope=${encodeURIComponent('openid profile email')}&` +
-      `state=${state}&` +
-      `prompt=select_account`;
-
-    console.log('Opening Auth URL:', authUrl);
-
     try {
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-      
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get('code');
-        if (code) {
-          console.log('Code captured, exchanging...');
-          handleCodeExchange(code);
-        }
-      }
-    } catch (err) {
-      console.error('Auth error', err);
-      Alert.alert('Login Error', 'Failed to start secure session.');
+      await promptAsync();
+    } catch (err: any) {
+      Alert.alert('Login Error', err.message || 'Failed to start authentication.');
     }
   };
 
   const handleCodeExchange = async (code: string) => {
+    setExchanging(true);
     try {
       const res = await fetch(`${BACKEND_BASE}/api/auth/exchange`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           code,
-          redirect_uri: redirectUri 
+          redirect_uri: redirectUri,
         }),
       });
 
@@ -91,8 +96,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         throw new Error(data.error || 'Exchange failed');
       }
     } catch (err: any) {
-      console.error('Exchange error', err);
-      Alert.alert('Authentication error', `Server Response: ${err.message || 'Unknown'}`);
+      Alert.alert('Authentication Error', `Server Response: ${err.message || 'Unknown'}`);
+    } finally {
+      setExchanging(false);
     }
   };
 
@@ -101,23 +107,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            <Ionicons name="flash" size={40} color="#fff" />
+            <Zap size={48} color="#fff" />
           </View>
           <Text style={styles.brandName}>PROJECT LOOKAHEAD</Text>
-          <Text style={styles.tagline}>KINETIC FIELD COMMAND</Text>
+          <Text style={styles.tagline}>FIELD COMMAND</Text>
         </View>
 
         <View style={styles.formContainer}>
-          <Text style={styles.welcomeText}>Welcome back, Agent</Text>
-          <Text style={styles.instruction}>Secure authentication required for field operations.</Text>
-          
-          <CustomButton 
-            title="Continue with Google"
-            onPress={handleLogin}
-            style={styles.loginButton}
-          />
-          
-          <Text style={styles.footerNote}>Protected by Bespoke Services Intelligence</Text>
+          {exchanging ? (
+            <View style={styles.exchangingWrap}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={styles.exchangingText}>Establishing secure session...</Text>
+            </View>
+          ) : (
+            <CustomButton
+              title="Continue with Google"
+              onPress={handleLogin}
+              style={styles.loginButton}
+            />
+          )}
+
+          <Text style={styles.footerNote}>Protected by Project Lookahead</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -127,7 +137,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Deep Navy
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
@@ -140,9 +150,9 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 100,
+    height: 100,
+    borderRadius: 28,
     backgroundColor: COLORS.brand,
     justifyContent: 'center',
     alignItems: 'center',
@@ -156,7 +166,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#fff',
+    color: COLORS.ink,
     letterSpacing: 1,
   },
   tagline: {
@@ -171,22 +181,18 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     alignItems: 'center',
   },
-  welcomeText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 10,
+  exchangingWrap: {
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 20,
   },
-  instruction: {
+  exchangingText: {
+    color: COLORS.textSecondary,
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
-    textAlign: 'center',
-    marginBottom: 40,
-    lineHeight: 20,
+    fontWeight: '600',
   },
   loginButton: {
     width: '100%',
-    backgroundColor: '#fff',
   },
   footerNote: {
     marginTop: 40,
@@ -195,5 +201,5 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.2)',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  }
+  },
 });

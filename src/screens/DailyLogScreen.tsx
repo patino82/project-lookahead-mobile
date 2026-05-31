@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Alert, ActivityIndicator, RefreshControl, SafeAreaView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
-import { Card } from '../components/Card';
-import { CustomButton } from '../components/CustomButton';
-import { LogEntry } from '../types';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, SafeAreaView, Modal } from 'react-native';
+import { PlusCircle, FileText, Pencil, Clock } from 'lucide-react-native';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 import { apiFetch } from '../services/api';
-import { FileText, Send, Clock, User } from 'lucide-react-native';
+import { LogEntry } from '../types';
 
 interface DailyLogScreenProps {
   route: any;
@@ -14,32 +12,28 @@ interface DailyLogScreenProps {
 export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
   const { projectId } = route.params || {};
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [content, setContent] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newContent, setNewContent] = useState('');
 
-  const fetchLogs = async () => {
-    if (!projectId) return;
+  const fetchLogs = useCallback(async () => {
     try {
-      const data = await apiFetch(`/api/projects/${projectId}/site-logs`);
-      if (data && data.logs) {
-        setLogs(data.logs);
-      }
-    } catch (err) {
-      console.error('Failed to fetch logs', err);
+      setError(null);
+      const result = await apiFetch(`/api/logs/${projectId || 'default'}`);
+      setLogs(result?.logs || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load logs.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    if (projectId) {
-      setLoading(true);
-      fetchLogs();
-    }
-  }, [projectId]);
+    fetchLogs();
+  }, [fetchLogs]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -47,99 +41,62 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
   };
 
   const handleAddLog = async () => {
-    if (!content.trim()) return;
-    setSubmitting(true);
+    if (!newContent.trim()) return;
     try {
-      const res = await apiFetch(`/api/projects/${projectId}/site-logs`, {
+      await apiFetch('/api/logs', {
         method: 'POST',
-        body: JSON.stringify({
-          content: content.trim(),
-          author: 'Field Agent',
-        }),
+        body: JSON.stringify({ projectId, content: newContent.trim() }),
       });
-
-      if (res && res.log) {
-        setLogs([res.log, ...logs]);
-        setContent('');
-        Alert.alert('Operational Success', 'Intelligence synced to Notion.');
-      }
-    } catch (err) {
-      console.error('Failed to add log', err);
-      Alert.alert('Transmission Error', 'Failed to reach central server.');
-    } finally {
-      setSubmitting(false);
+      setNewContent('');
+      setShowAddModal(false);
+      fetchLogs();
+    } catch (err: any) {
+      // silent fail
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   const renderItem = ({ item }: { item: LogEntry }) => (
-    <Card variant="outline" style={styles.logCard}>
+    <View style={styles.logCard}>
       <View style={styles.logHeader}>
-        <View style={styles.logMeta}>
-          <Clock size={12} color={COLORS.primary} />
-          <Text style={styles.logDate}>{new Date(item.date).toLocaleDateString()}</Text>
+        <View style={styles.logHeaderLeft}>
+          <Clock size={14} color={COLORS.textSecondary} />
+          <Text style={styles.logDate}>{formatDate(item.date)}</Text>
         </View>
-        <View style={styles.logMeta}>
-          <User size={12} color={COLORS.muted} />
-          <Text style={styles.logAuthor}>{item.author}</Text>
-        </View>
+        <Text style={styles.logAuthor}>{item.author}</Text>
       </View>
-      <Text style={styles.entryText}>{item.content}</Text>
-    </Card>
+      <Text style={styles.logContent}>{item.content}</Text>
+    </View>
   );
 
-  if (!projectId) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerArea}>
-          <Text style={styles.welcome}>KINETIC CAPTURE</Text>
-          <Text style={styles.mainTitle}>Site Intelligence</Text>
-        </View>
-        <View style={styles.centered}>
-          <FileText size={64} color={COLORS.border} strokeWidth={1} />
-          <Text style={styles.emptyText}>Project Unselected</Text>
-          <Text style={styles.emptySub}>A project selection is required to transmit site logs.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.headerArea}>
-          <Text style={styles.welcome}>DAILY RECORD</Text>
-          <Text style={styles.mainTitle}>Site Intelligence</Text>
-        </View>
-        
-        <View style={styles.inputArea}>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder="Document site events..."
-              placeholderTextColor={COLORS.muted}
-              multiline
-              value={content}
-              onChangeText={setContent}
-            />
-            <TouchableOpacity 
-              style={[styles.sendButton, (!content.trim() || submitting) && styles.sendButtonDisabled]}
-              onPress={handleAddLog}
-              disabled={submitting || !content.trim()}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Send size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
+    <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>JOURNAL</Text>
+            <Text style={styles.title}>Daily Logs</Text>
           </View>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => setShowAddModal(true)}
+          >
+            <PlusCircle size={24} color={COLORS.primary} />
+          </TouchableOpacity>
         </View>
+
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         {loading && !refreshing ? (
-          <View style={styles.centered}>
+          <View style={styles.centerContainer}>
             <ActivityIndicator size="small" color={COLORS.primary} />
           </View>
         ) : (
@@ -154,14 +111,53 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>History Clear</Text>
-                <Text style={styles.emptySub}>No site events recorded for this period.</Text>
+                <FileText size={48} color={COLORS.border} />
+                <Text style={styles.emptyText}>No Logs Yet</Text>
+                <Text style={styles.emptySub}>Start documenting your daily progress.</Text>
               </View>
             }
           />
         )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        <Modal
+          visible={showAddModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowAddModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>New Log Entry</Text>
+              <TextInput
+                style={styles.textArea}
+                multiline
+                numberOfLines={6}
+                placeholder="What happened on site today?"
+                placeholderTextColor={COLORS.textSecondary}
+                value={newContent}
+                onChangeText={setNewContent}
+                autoFocus
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => { setShowAddModal(false); setNewContent(''); }}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.submitBtn, !newContent.trim() && styles.submitBtnDisabled]}
+                  onPress={handleAddLog}
+                  disabled={!newContent.trim()}
+                >
+                  <Text style={styles.submitText}>Save Entry</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -170,114 +166,176 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerArea: {
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: SPACING.md,
   },
-  welcome: {
-    fontSize: 11,
+  greeting: {
+    fontSize: 10,
     fontWeight: '900',
     color: COLORS.primary,
     letterSpacing: 2,
+    marginBottom: 4,
   },
-  mainTitle: {
-    fontSize: 28,
+  title: {
+    fontSize: FONT_SIZE.xxl,
     fontWeight: '900',
     color: COLORS.ink,
-    marginTop: 4,
   },
-  inputArea: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: 8,
-    ...SHADOWS.soft,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  input: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 120,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 10,
-    fontSize: 15,
-    color: COLORS.ink,
-  },
-  sendButton: {
+  addBtn: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
+    borderRadius: 16,
+    backgroundColor: COLORS.surfaceSolid,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     justifyContent: 'center',
-    marginLeft: 8,
+    alignItems: 'center',
   },
-  sendButtonDisabled: {
-    backgroundColor: COLORS.border,
+  errorBanner: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 13,
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: 40,
   },
   logCard: {
-    padding: 16,
-    marginBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.surfaceSolid,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   logHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
   },
-  logMeta: {
+  logHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   logDate: {
     fontSize: 11,
-    fontWeight: '800',
-    color: COLORS.ink,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
   logAuthor: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.muted,
+    color: COLORS.primary,
   },
-  entryText: {
-    fontSize: 14,
+  logContent: {
+    fontSize: FONT_SIZE.md,
     color: COLORS.ink,
     lineHeight: 22,
-    fontWeight: '500',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   emptyContainer: {
-    padding: 60,
     alignItems: 'center',
+    paddingTop: 80,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: '900',
     color: COLORS.ink,
+    marginTop: SPACING.md,
   },
   emptySub: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.surfaceSolid,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.ink,
+    marginBottom: SPACING.md,
+  },
+  textArea: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: SPACING.md,
+    fontSize: FONT_SIZE.md,
+    color: COLORS.ink,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: SPACING.md,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  cancelText: {
     fontSize: 14,
-    color: COLORS.muted,
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 20,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  submitBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  submitBtnDisabled: {
+    opacity: 0.5,
+  },
+  submitText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#fff',
   },
 });

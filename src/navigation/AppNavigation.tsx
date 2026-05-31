@@ -2,7 +2,8 @@ import React, { useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
+import { Home, Calendar, FileText, AlertCircle, FolderOpen } from 'lucide-react-native';
 import { COLORS } from '../constants';
 import { amplitude } from '../config/amplitude';
 
@@ -18,6 +19,24 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+function TabIcon({ name, color }: { name: string; color: string }) {
+  const size = 22;
+  switch (name) {
+    case 'Today':
+      return <Home size={size} color={color} />;
+    case 'Schedule':
+      return <Calendar size={size} color={color} />;
+    case 'Logs':
+      return <FileText size={size} color={color} />;
+    case 'Open Issues':
+      return <AlertCircle size={size} color={color} />;
+    case 'Projects':
+      return <FolderOpen size={size} color={color} />;
+    default:
+      return <View style={{ width: size, height: size }} />;
+  }
+}
+
 function MainTabs({ route }: any) {
   const { projectId } = route.params || {};
 
@@ -28,66 +47,50 @@ function MainTabs({ route }: any) {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#111827', // Matching Cyber Dark theme
+          backgroundColor: COLORS.background,
           borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.05)',
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 10,
+          borderTopColor: COLORS.border,
+          height: 72,
+          paddingBottom: 14,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 9,
-          fontWeight: '950',
-          textTransform: 'uppercase',
-          letterSpacing: 1,
+          fontSize: 11,
+          fontWeight: '700',
         },
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any;
-
-          if (route.name === 'Today') {
-            iconName = focused ? 'flash' : 'flash-outline';
-          } else if (route.name === 'Logs') {
-            iconName = focused ? 'document-text' : 'document-text-outline';
-          } else if (route.name === 'Open Items') {
-            iconName = focused ? 'alert-circle' : 'alert-circle-outline';
-          } else if (route.name === 'Projects') {
-            iconName = focused ? 'apps' : 'apps-outline';
-          } else if (route.name === 'Schedule') {
-            iconName = focused ? 'calendar' : 'calendar-outline';
-          }
-
-          return <Ionicons name={iconName} size={22} color={color} />;
-        },
+        tabBarIcon: ({ focused, color }) => (
+          <TabIcon name={route.name} color={color} />
+        ),
       })}
     >
-      <Tab.Screen 
-        name="Projects" 
-        component={ProjectListScreen} 
-        options={{ title: 'MISSIONS' }}
-      />
-      <Tab.Screen 
-        name="Today" 
-        component={TodayScreen} 
+      <Tab.Screen
+        name="Today"
+        component={TodayScreen}
         initialParams={{ projectId }}
-        options={{ title: 'KINETIC' }}
+        options={{ title: 'Today' }}
       />
-      <Tab.Screen 
-        name="Logs" 
-        component={DailyLogScreen} 
+      <Tab.Screen
+        name="Schedule"
+        component={ScheduleScreen}
         initialParams={{ projectId }}
-        options={{ title: 'CAPTURE' }}
+        options={{ title: 'Schedule' }}
       />
-      <Tab.Screen 
-        name="Open Items" 
-        component={OpenItemsScreen} 
+      <Tab.Screen
+        name="Logs"
+        component={DailyLogScreen}
         initialParams={{ projectId }}
-        options={{ title: 'DEBT' }}
+        options={{ title: 'Logs' }}
       />
-      <Tab.Screen 
-        name="Schedule" 
-        component={ScheduleScreen} 
+      <Tab.Screen
+        name="Open Issues"
+        component={OpenItemsScreen}
         initialParams={{ projectId }}
-        options={{ title: 'TIMELINE' }}
+        options={{ title: 'Open Issues' }}
+      />
+      <Tab.Screen
+        name="Projects"
+        component={ProjectListScreen}
+        options={{ title: 'Projects' }}
       />
     </Tab.Navigator>
   );
@@ -110,14 +113,14 @@ export default function AppNavigation() {
       }}
     >
       <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="MainTabs" 
-          component={MainTabs} 
+        <Stack.Screen
+          name="MainTabs"
+          component={MainTabs}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

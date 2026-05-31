@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, SafeAreaView, TouchableOpacity } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
-import { Card } from '../components/Card';
-import { CustomButton } from '../components/CustomButton';
-import { OpenItem } from '../types';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView, Alert } from 'react-native';
+import { AlertTriangle, CheckCircle, Clock, PlusCircle, Circle } from 'lucide-react-native';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 import { apiFetch } from '../services/api';
-import { AlertCircle, Plus, ChevronRight, ListTodo } from 'lucide-react-native';
+import { OpenItem } from '../types';
 
 interface OpenItemsScreenProps {
   route: any;
@@ -14,147 +12,177 @@ interface OpenItemsScreenProps {
 export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
   const { projectId } = route.params || {};
   const [items, setItems] = useState<OpenItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [description, setDescription] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchItems = async () => {
-    if (!projectId) return;
+  const fetchItems = useCallback(async () => {
     try {
-      const data = await apiFetch(`/api/projects/${projectId}/open-items`);
-      if (data && data.items) {
-        setItems(data.items);
-      }
-    } catch (err) {
-      console.error('Failed to fetch items', err);
+      setError(null);
+      const result = await apiFetch(`/api/open-items/${projectId || 'default'}`);
+      setItems(result?.items || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load open items.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
-    if (projectId) {
-      setLoading(true);
-      fetchItems();
-    }
-  }, [projectId]);
+    fetchItems();
+  }, [fetchItems]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchItems();
   };
 
-  const handleAddItem = async () => {
-    if (!description.trim()) return;
-    setSubmitting(true);
+  const handleToggleStatus = async (item: OpenItem) => {
+    const newStatus = item.status === 'open' ? 'closed' : 'open';
     try {
-      const res = await apiFetch(`/api/projects/${projectId}/open-items`, {
-        method: 'POST',
-        body: JSON.stringify({
-          description: description.trim(),
-          priority: 'Medium',
-        }),
+      await apiFetch(`/api/open-items/${item.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
       });
-
-      if (res && res.item) {
-        setItems([res.item, ...items]);
-        setDescription('');
-      }
-    } catch (err) {
-      console.error('Failed to add item', err);
-    } finally {
-      setSubmitting(false);
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+    } catch (err: any) {
+      Alert.alert('Error', 'Failed to update item status.');
     }
   };
 
-  const renderItem = ({ item }: { item: OpenItem }) => (
-    <Card variant="elevated" style={styles.itemCard}>
-      <View style={styles.itemRow}>
-        <View style={[styles.priorityTab, { backgroundColor: item.priority.toLowerCase() === 'high' ? COLORS.rose : COLORS.amber }]} />
-        <View style={styles.itemInfo}>
-          <Text style={styles.itemDesc}>{item.description}</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.priorityLabel}>{item.priority.toUpperCase()}</Text>
-            {item.dueDate && (
-              <Text style={styles.dateLabel}>• Due {new Date(item.dueDate).toLocaleDateString()}</Text>
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return COLORS.rose;
+      case 'medium': return COLORS.amber;
+      case 'low': return COLORS.success;
+      default: return COLORS.textSecondary;
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    const color = getPriorityColor(priority);
+    return <AlertTriangle size={14} color={color} />;
+  };
+
+  const formatDueDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return 'Due tomorrow';
+    return `${diffDays}d left`;
+  };
+
+  const openItems = items.filter(i => i.status === 'open');
+  const closedItems = items.filter(i => i.status === 'closed');
+
+  const renderItem = ({ item }: { item: OpenItem }) => {
+    const isClosed = item.status === 'closed';
+    const dueText = formatDueDate(item.dueDate);
+
+    return (
+      <TouchableOpacity
+        style={[styles.itemCard, isClosed && styles.itemCardClosed]}
+        activeOpacity={0.8}
+        onPress={() => handleToggleStatus(item)}
+      >
+        <View style={styles.itemTop}>
+          <View style={styles.itemLeft}>
+            {isClosed ? (
+              <CheckCircle size={20} color={COLORS.success} />
+            ) : (
+              <Circle size={20} color={COLORS.textSecondary} />
             )}
+            <Text style={[styles.itemDescription, isClosed && styles.itemDescriptionClosed]}>
+              {item.description}
+            </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.checkAction}>
-          <View style={styles.checkCircle} />
-        </TouchableOpacity>
+
+        <View style={styles.itemFooter}>
+          <View style={styles.priorityBadge}>
+            {getPriorityIcon(item.priority)}
+            <Text style={[styles.priorityText, { color: getPriorityColor(item.priority) }]}>
+              {item.priority.toUpperCase()}
+            </Text>
+          </View>
+          {dueText && (
+            <View style={styles.dueBadge}>
+              <Clock size={12} color={COLORS.textSecondary} />
+              <Text style={styles.dueText}>{dueText}</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSection = (title: string, data: OpenItem[], emptyText: string) => (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionCount}>{data.length}</Text>
       </View>
-    </Card>
+      {data.length === 0 ? (
+        <Text style={styles.sectionEmpty}>{emptyText}</Text>
+      ) : (
+        data.map(item => <View key={item.id}>{renderItem({ item })}</View>)
+      )}
+    </View>
   );
 
-  if (!projectId) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.headerArea}>
-          <Text style={styles.welcome}>COMMAND STACK</Text>
-          <Text style={styles.mainTitle}>Project Blockers</Text>
-        </View>
-        <View style={styles.centered}>
-          <AlertCircle size={64} color={COLORS.border} strokeWidth={1} />
-          <Text style={styles.emptyText}>Horizon Clear</Text>
-          <Text style={styles.emptySub}>Select a mission sequence to view or deploy project blockers.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerArea}>
-        <Text style={styles.welcome}>OPERATIONAL DEBT</Text>
-        <Text style={styles.mainTitle}>Project Blockers</Text>
-      </View>
-      
-      <View style={styles.inputArea}>
-        <View style={styles.inputCard}>
-          <TextInput
-            style={styles.input}
-            placeholder="Log a new mission blocker..."
-            placeholderTextColor={COLORS.muted}
-            value={description}
-            onChangeText={setDescription}
-          />
-          <TouchableOpacity 
-            style={[styles.addButton, (!description.trim() || submitting) && styles.addBtnDisabled]}
-            onPress={handleAddItem}
-            disabled={submitting || !description.trim()}
-          >
-            {submitting ? <ActivityIndicator size="small" color="#fff" /> : <Plus size={24} color="#fff" />}
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>TRACKING</Text>
+            <Text style={styles.title}>Open Items</Text>
+          </View>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{openItems.length} open</Text>
+          </View>
         </View>
-      </View>
 
-      {loading && !refreshing ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <ListTodo size={48} color={COLORS.border} strokeWidth={1} />
-              <Text style={styles.emptyText}>Operational Flow Optimal</Text>
-              <Text style={styles.emptySub}>No active blockers detected for this sequence.</Text>
-            </View>
-          }
-        />
-      )}
-    </SafeAreaView>
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {loading && !refreshing ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={[{ key: 'content' }]}
+            renderItem={() => (
+              <View>
+                {renderSection('OPEN', openItems, 'No open items. Tap an item to close it.')}
+                {closedItems.length > 0 && renderSection('CLOSED', closedItems, '')}
+              </View>
+            )}
+            keyExtractor={(item) => item.key}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <AlertTriangle size={48} color={COLORS.border} />
+                <Text style={styles.emptyText}>No Open Items</Text>
+                <Text style={styles.emptySub}>Issues and punch list items will appear here.</Text>
+              </View>
+            }
+          />
+        )}
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -163,128 +191,167 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  headerArea: {
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: SPACING.md,
   },
-  welcome: {
-    fontSize: 11,
+  greeting: {
+    fontSize: 10,
     fontWeight: '900',
     color: COLORS.primary,
     letterSpacing: 2,
+    marginBottom: 4,
   },
-  mainTitle: {
-    fontSize: 28,
+  title: {
+    fontSize: FONT_SIZE.xxl,
     fontWeight: '900',
     color: COLORS.ink,
-    marginTop: 4,
   },
-  inputArea: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
-  },
-  inputCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: RADIUS.md,
-    padding: 6,
-    ...SHADOWS.soft,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  input: {
-    flex: 1,
+  countBadge: {
     paddingHorizontal: 12,
-    fontSize: 15,
-    color: COLORS.ink,
-  },
-  addButton: {
-    width: 44,
-    height: 44,
+    paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: COLORS.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(224, 123, 53, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(224, 123, 53, 0.2)',
   },
-  addBtnDisabled: {
-    opacity: 0.5,
+  countText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.primary,
+  },
+  errorBanner: {
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 13,
+    fontWeight: '700',
   },
   listContent: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: 40,
   },
-  itemCard: {
-    padding: 0,
-    overflow: 'hidden',
-    marginBottom: 12,
+  section: {
+    marginBottom: SPACING.lg,
   },
-  itemRow: {
+  sectionHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: SPACING.sm,
+    paddingBottom: SPACING.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  priorityTab: {
-    width: 6,
-    height: '100%',
-  },
-  itemInfo: {
-    flex: 1,
-    padding: 16,
-  },
-  itemDesc: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: COLORS.ink,
-    lineHeight: 20,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-    gap: 8,
-  },
-  priorityLabel: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: COLORS.muted,
-    letterSpacing: 0.5,
-  },
-  dateLabel: {
+  sectionTitle: {
     fontSize: 11,
-    color: COLORS.muted,
-    fontWeight: '500',
+    fontWeight: '900',
+    color: COLORS.textSecondary,
+    letterSpacing: 1,
   },
-  checkAction: {
-    paddingHorizontal: 16,
+  sectionCount: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+  sectionEmpty: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    paddingVertical: SPACING.md,
+  },
+  itemCard: {
+    backgroundColor: COLORS.surfaceSolid,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.xs,
+    borderWidth: 1,
     borderColor: COLORS.border,
   },
-  centered: {
+  itemCardClosed: {
+    opacity: 0.6,
+  },
+  itemTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.sm,
+  },
+  itemLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
     flex: 1,
-    justifyContent: 'center',
+  },
+  itemDescription: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.ink,
+    flex: 1,
+    lineHeight: 20,
+  },
+  itemDescriptionClosed: {
+    textDecorationLine: 'line-through',
+    color: COLORS.textSecondary,
+  },
+  itemFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.sm,
+    paddingLeft: 28,
+  },
+  priorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: COLORS.glass,
+  },
+  priorityText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  dueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dueText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
   emptyContainer: {
-    padding: 60,
     alignItems: 'center',
+    paddingTop: 80,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: '900',
     color: COLORS.ink,
-    marginTop: 20,
+    marginTop: SPACING.md,
   },
   emptySub: {
-    fontSize: 14,
-    color: COLORS.muted,
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 20,
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
   },
 });
