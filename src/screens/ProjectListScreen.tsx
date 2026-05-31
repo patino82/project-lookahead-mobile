@@ -1,13 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS, FONT_SIZE } from '../constants';
-import { CustomButton } from '../components/CustomButton';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  TextInput,
+} from 'react-native';
+import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 import { Project } from '../types';
 import { amplitude } from '../config/amplitude';
-import { apiFetch, ApiError } from '../services/api';
-import { LinearGradient } from 'expo-linear-gradient';
+import { apiFetch } from '../services/api';
+import { LayoutGrid, ChevronRight, MapPin, Calendar, Search } from 'lucide-react-native';
 
-import { LayoutGrid, ChevronRight, MapPin, Calendar, Search, FolderOpen } from 'lucide-react-native';
 interface ProjectListScreenProps {
   navigation: any;
 }
@@ -65,7 +73,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
     fetchProjects();
   };
 
-  const getStatusColor = (status: string) => {
+  const getPillColor = (status: string) => {
     switch (status) {
       case 'active': return COLORS.success;
       case 'completed': return '#3b82f6';
@@ -74,71 +82,105 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
     }
   };
 
-  const renderItem = ({ item }: { item: Project }) => (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      style={styles.itemContainer}
-      onPress={() => {
-        amplitude.track('Project Selected', {
-          project_id: item.id,
-          project_name: item.name,
-        });
-        navigation.navigate('MainTabs', {
-          screen: 'Today',
-          params: { projectId: item.id },
-        });
-      }}
-    >
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={styles.iconBox}>
-            <FolderOpen size={20} color={COLORS.primary} />
+  const getPillBg = (status: string) => {
+    switch (status) {
+      case 'active': return 'rgba(16, 185, 129, 0.12)';
+      case 'completed': return 'rgba(59, 130, 246, 0.12)';
+      case 'on-hold': return 'rgba(245, 158, 11, 0.12)';
+      default: return 'rgba(122, 129, 153, 0.12)';
+    }
+  };
+
+  const renderItem = ({ item }: { item: Project }) => {
+    const itemHeight = 44;
+    const progressPercent = item._count ? 50 : 15; // placeholder since no completion %
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => {
+          amplitude.track('Project Selected', {
+            project_id: item.id,
+            project_name: item.name,
+          });
+          navigation.navigate('MainTabs', {
+            screen: 'Today',
+            params: { projectId: item.id },
+          });
+        }}
+        style={styles.cardTouchable}
+      >
+        <View style={styles.card}>
+          {/* Top row: name + status pill + chevron */}
+          <View style={styles.cardTopRow}>
+            <Text style={styles.projectName} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: getPillBg(item.status) },
+              ]}
+            >
+              <Text
+                style={[styles.statusPillText, { color: getPillColor(item.status) }]}
+              >
+                {item.status.toUpperCase()}
+              </Text>
+            </View>
+            <ChevronRight size={18} color={COLORS.textSecondary} />
           </View>
-          <View style={styles.titleInfo}>
-            <Text style={styles.projectName} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-              <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+
+          {/* Details row */}
+          <View style={styles.detailsRow}>
+            <View style={styles.detailItem}>
+              <MapPin size={12} color={COLORS.textSecondary} />
+              <Text style={styles.detailText} numberOfLines={1}>
+                {item.location}
+              </Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Calendar size={12} color={COLORS.textSecondary} />
+              <Text style={styles.detailText}>Updated {item.lastUpdated}</Text>
             </View>
           </View>
-          <ChevronRight size={18} color={COLORS.textSecondary} />
-        </View>
 
-        <View style={styles.detailsGrid}>
-          <View style={styles.detailItem}>
-            <MapPin size={12} color={COLORS.textSecondary} />
-            <Text style={styles.detailText} numberOfLines={1}>{item.location}</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Calendar size={12} color={COLORS.textSecondary} />
-            <Text style={styles.detailText}>Updated {item.lastUpdated}</Text>
+          {/* Task count */}
+          {item._count && (
+            <Text style={styles.taskCountText}>
+              {item._count.tasks} task{item._count.tasks !== 1 ? 's' : ''}
+            </Text>
+          )}
+
+          {/* Progress bar */}
+          <View style={styles.progressBarBg}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${progressPercent}%`,
+                  backgroundColor: getPillColor(item.status),
+                },
+              ]}
+            />
           </View>
         </View>
-
-        {item._count && (
-          <View style={styles.countRow}>
-            <Text style={styles.countText}>{item._count.tasks} tasks</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
-        style={StyleSheet.absoluteFill}
-      />
       <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
         <View style={styles.headerArea}>
-          <View>
-            <Text style={styles.welcome}>PORTFOLIO</Text>
-            <Text style={styles.mainTitle}>Projects</Text>
-            <Text style={styles.subtitle}>{projects.length} ACTIVE PROJECTS</Text>
-          </View>
+          <Text style={styles.title}>Projects</Text>
+          <Text style={styles.subtitle}>
+            {projects.length} ACTIVE PROJECTS
+          </Text>
         </View>
 
+        {/* Search bar */}
         <View style={styles.searchArea}>
           <View style={styles.searchWrapper}>
             <Search size={16} color={COLORS.textSecondary} style={styles.searchIcon} />
@@ -152,6 +194,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
           </View>
         </View>
 
+        {/* Error banner */}
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>{error}</Text>
@@ -161,37 +204,41 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
           </View>
         )}
 
+        {/* Loading state */}
         {loading && !refreshing ? (
           <View style={styles.centered}>
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
         ) : (
-          <FlatList
-            data={filteredProjects}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={[
-              styles.listContent,
-              filteredProjects.length === 0 && styles.listContentEmpty,
-            ]}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <LayoutGrid size={48} color={COLORS.border} />
-                <Text style={styles.emptyText}>
-                  {searchQuery ? 'No Matching Projects' : 'No Projects Yet'}
-                </Text>
-                <Text style={styles.emptySub}>
-                  {searchQuery
-                    ? 'Try a different search term.'
-                    : 'Create a project in the web dashboard to get started.'}
-                </Text>
-              </View>
-            }
-          />
+          <>
+            {/* List */}
+            <FlatList
+              data={filteredProjects}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={[
+                styles.listContent,
+                filteredProjects.length === 0 && styles.listContentEmpty,
+              ]}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={COLORS.primary}
+                />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <LayoutGrid size={64} color={COLORS.border} />
+                  <Text style={styles.emptyText}>No Projects Found</Text>
+                  <Text style={styles.emptySub}>
+                    Create your first project in the web dashboard
+                  </Text>
+                </View>
+              }
+            />
+          </>
         )}
       </SafeAreaView>
     </View>
@@ -205,18 +252,11 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: 20,
-    paddingBottom: SPACING.md,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
-  welcome: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  mainTitle: {
-    fontSize: FONT_SIZE.xxxl,
+  title: {
+    fontSize: 32,
     fontWeight: '900',
     color: COLORS.ink,
     letterSpacing: -1,
@@ -226,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textSecondary,
     letterSpacing: 1,
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   searchArea: {
     paddingHorizontal: SPACING.lg,
@@ -275,6 +315,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   retryBtnText: {
     color: COLORS.error,
@@ -293,62 +335,46 @@ const styles = StyleSheet.create({
   listContentEmpty: {
     flexGrow: 1,
   },
-  itemContainer: {
+  cardTouchable: {
     marginBottom: SPACING.md,
+    minHeight: 44,
   },
   card: {
     backgroundColor: COLORS.surfaceSolid,
-    borderRadius: RADIUS.md,
+    borderRadius: 12,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  cardTop: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: 'rgba(224, 123, 53, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  titleInfo: {
-    flex: 1,
+    gap: SPACING.sm,
+    minHeight: 44,
   },
   projectName: {
-    fontSize: 15,
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '700',
     color: COLORS.ink,
-    letterSpacing: 0.3,
-    marginBottom: 4,
+    flex: 1,
   },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusText: {
+  statusPillText: {
     fontSize: 10,
     fontWeight: '900',
-    color: COLORS.textSecondary,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  detailsGrid: {
+  detailsRow: {
     flexDirection: 'row',
-    marginTop: 16,
-    paddingTop: 14,
+    marginTop: SPACING.md,
+    paddingTop: SPACING.sm,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    gap: 16,
+    gap: SPACING.md,
   },
   detailItem: {
     flexDirection: 'row',
@@ -362,24 +388,31 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  countRow: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  countText: {
+  taskCountText: {
     fontSize: 11,
     color: COLORS.textSecondary,
     fontWeight: '600',
+    marginTop: SPACING.sm,
+  },
+  progressBarBg: {
+    height: 3,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    marginTop: SPACING.md,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: 3,
+    borderRadius: 2,
   },
   emptyContainer: {
     paddingTop: 80,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     color: COLORS.ink,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
     marginTop: SPACING.lg,
   },
