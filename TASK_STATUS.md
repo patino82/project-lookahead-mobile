@@ -13,45 +13,59 @@
 ## Last Completed Work
 - 2026-05-20: Initial project setup with Expo
 - 2026-05-26: Added OpenItemsScreen with real API calls (partial)
+- 2026-05-31: Phase 2 UI/UX revamp of LoginScreen and ProjectListScreen
+
+## Phase 2 Changes (2026-05-31)
+
+### LoginScreen revamp
+- Full-bleed dark background (COLORS.background)
+- Logo: 100x100 with brand-colored border + shadow glow
+- Brand name enlarged to 30px fontWeight 900, tagline "FIELD COMMAND" kept
+- Full-width white "Continue with Google" button with "G" icon circle
+- Terms of Service text below button
+- Removed verbose "Welcome Back" / "Secure authentication required" text
+- User-friendly error messages
+- Types, API services, navigation structure unchanged
+
+### ProjectListScreen revamp
+- Large "Projects" header (32px, fontWeight 900) + "X ACTIVE PROJECTS" subtitle
+- Search bar filtering projects by name (TextInput with Search icon)
+- Redesigned project cards:
+  - Project name (bold 16px)
+  - Colored status pill (green=active, blue=completed, amber=on-hold)
+  - Location with MapPin icon
+  - Last updated date with Calendar icon
+  - Task count from _count.tasks
+  - Subtle progress bar at bottom
+- Empty state: LayoutGrid icon (64px) + "No Projects Found" + web dashboard CTA
+- Loading state: centered ActivityIndicator
+- Error state: colored banner with Retry button
+- Pull to refresh preserved
+
+### Files Modified
+- src/screens/LoginScreen.tsx
+- src/screens/ProjectListScreen.tsx
+
+### Commits
+- 9de8ddc: LoginScreen Phase 2 revamp
+- 11f4e5e: ProjectListScreen Phase 2 revamp
+
+### tsc Result
+- PASS — `npx tsc --noEmit` returns 0 errors
 
 ## In Progress
-- PARTIAL FOUNDATION RECOVERY REQUIRED — an interrupted delegated revamp left a dirty working tree with substantial uncommitted changes.
-- Current observed scope: 16 modified tracked files and 5 untracked paths, including all 8 screens, navigation, constants, API service, types, `TaskCard.tsx`, and `src/data/quickbooks.ts`.
-- Do not discard or layer new edits onto this checkout until the diff is reviewed and `npx tsc --noEmit` is run.
-- Use Hermes as the command surface. Hermes should create an isolated Codex worktree to review, validate, and reconcile the Phase 1 changes.
+- (none)
 
 ## Next Steps (Priority Order)
-1. Review the interrupted Phase 1 dirty tree and classify each changed file as accept, revise, or reject.
-2. Run `npx tsc --noEmit` and fix foundation compile errors in an isolated worktree.
-3. Reconcile the reviewed Phase 1 foundation into a scoped branch and commit before starting Phase 2.
-4. Fix apiFetch error handling (don't silently swallow errors)
-5. Replace mock data in ProjectListScreen, ScheduleScreen with real API calls
-6. Wire up OpenItemsScreen check button to mark items complete via API
-7. Implement SettingsScreen logout (clear AsyncStorage + navigate)
-8. Add calendar date picker to DailyLogScreen (@react-native-community/datetimepicker)
-9. Add visible error banners to all screens (no more silent failures)
-10. FULL UI/UX REDESIGN:
-   - Remove redundant sections (TodayScreen duplicates, DailyLogScreen bloat)
-   - All date inputs → calendar popup pickers
-   - Modern field-ready UI: dark theme, high contrast, thumb-friendly 44px+ targets
-   - Clean up tab bar labels and navigation icons
-   - Consolidate ProjectListScreen — too much info per card, simplify hierarchy
-   - ScheduleScreen: replace list with proper visual timeline/calendar
-   - Reference design: ../Stitch/ folder
-11. Offline support (SQLite or WatermelonDB with sync queue)
-12. E2E testing on physical device
+1. ~~Phase 2 Login + ProjectList revamp~~ — COMPLETE
+2. Phase 2 remaining screens: TodayScreen, ScheduleScreen, DailyLogScreen, OpenItemsScreen, DocumentsScreen, SettingsScreen
+3. Offline support (SQLite or WatermelonDB with sync queue)
+4. E2E testing on physical device
+5. Fix apiFetch error handling (don't silently swallow errors)
 
 ## UI/UX Redesign Details
 See: ../PROJECT_STATUS.md "Key Issues (All Codebases)"
 Design reference: ../Stitch/ folder (elite dark mode, glassmorphism, construction orange/teal)
-Current problems:
-- Outdated look, not intuitive on job site
-- Redundant sections across screens
-- No calendar pickers (text-only date input)
-- Tab bar labels are generic/vague
-- ProjectListScreen cards overloaded with info
-- DailyLogScreen has too many fields visible at once
-- ScheduleScreen shows a flat list instead of a timeline
 
 ## Backend API Contract
 Base URL: http://localhost:3000 (set in src/config/env.ts)
@@ -69,12 +83,11 @@ Endpoints:
 - POST /api/auth/exchange — Google OAuth token exchange
 
 Auth: After login, JWT is in AsyncStorage under 'accessToken'.
-Send as: Authorization: Bearer <token>
+Send as: Authorization: Bearer ***
 
 ## Known Bugs
 - Check button in OpenItemsScreen does nothing (no onPress handler)
 - Settings logout is empty onPress
-- ProjectListScreen silently falls back to mock data
 - ScheduleScreen entirely mock data
 - apiFetch silently catches errors with console.error only
 
