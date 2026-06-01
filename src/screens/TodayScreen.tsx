@@ -1,16 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CustomButton } from '../components/CustomButton';
 import { TaskCard } from '../components/TaskCard';
 import { quickBooks } from '../data/quickbooks';
 import { apiFetch } from '../services/api';
-import { amplitude } from '../config/amplitude';
 import { Task } from '../types';
 
-import { Home, Calendar, FileText, AlertCircle, ClipboardList, Bell, CheckCircle, CheckCheck, Zap } from 'lucide-react-native';
-const { width } = Dimensions.get('window');
+import { AlertCircle, ClipboardList, Bell, CheckCircle, CheckCheck, FileText, Zap } from 'lucide-react-native';
 
 interface TodayScreenProps {
   route: any;
@@ -38,7 +36,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
   const fetchDashboard = useCallback(async () => {
     try {
       setError(null);
-      const result = await apiFetch(`/api/dashboard/${projectId || 'default'}`);
+      const result = await apiFetch(`/api/projects/${projectId || 'default'}/dashboard`);
       setData(result);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard.');
@@ -77,6 +75,8 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
   const renderTaskItem = ({ item }: { item: Task }) => (
     <TaskCard task={item} projectId={projectId} />
   );
+
+  const openSchedule = (params?: Record<string, string>) => navigation.navigate('Schedule', params);
 
   if (loading && !refreshing) {
     return (
@@ -128,13 +128,20 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
               {/* Stats Row */}
               <View style={styles.statsRow}>
                 {statsConfig.map((stat) => (
-                  <View key={stat.key} style={styles.statCard}>
+                  <TouchableOpacity
+                    key={stat.key}
+                    style={styles.statCard}
+                    activeOpacity={0.75}
+                    onPress={() => stat.key === 'overdue'
+                      ? navigation.navigate('Open Issues')
+                      : openSchedule({ filter: stat.key })}
+                  >
                     <View style={[styles.statIcon, { backgroundColor: `${stat.color}15` }]}>
                       {getStatIcon(stat.icon, 18, stat.color)}
                     </View>
                     <Text style={styles.statValue}>{stat.value}</Text>
                     <Text style={styles.statLabel}>{stat.label}</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
 
@@ -146,7 +153,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
                 horizontal
                 data={quickBooks}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.quickBookCard}>
+                  <TouchableOpacity style={styles.quickBookCard} onPress={() => openSchedule({ phase: item.title })}>
                     <Text style={styles.quickBookTitle}>{item.title}</Text>
                     <Text style={styles.quickBookCount}>{item.taskCount} tasks</Text>
                   </TouchableOpacity>
@@ -159,8 +166,25 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
               {/* Today's Tasks */}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's Tasks</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Schedule')}>
+                <TouchableOpacity onPress={() => openSchedule()}>
                   <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          }
+          ListFooterComponent={
+            <View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Field Actions</Text>
+              </View>
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Logs')}>
+                  <FileText size={18} color={COLORS.primary} />
+                  <Text style={styles.actionTitle}>Daily Logs</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Open Issues')}>
+                  <AlertCircle size={18} color={COLORS.rose} />
+                  <Text style={styles.actionTitle}>Open Issues</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -323,5 +347,27 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  actionCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    minHeight: 52,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surfaceSolid,
+  },
+  actionTitle: {
+    color: COLORS.ink,
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

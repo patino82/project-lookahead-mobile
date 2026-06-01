@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { LogOut, User, Bell, ShieldCheck, ChevronRight, Zap } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
 
@@ -31,6 +32,25 @@ const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPres
 );
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+  const [email, setEmail] = useState('Signed-in account');
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+
+  useEffect(() => {
+    const loadEmail = async () => {
+      try {
+        const [storedUser, storedEmail] = await Promise.all([
+          AsyncStorage.getItem('user'),
+          AsyncStorage.getItem('userEmail'),
+        ]);
+        const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+        setEmail(parsedUser?.email || storedEmail || 'Signed-in account');
+      } catch {
+        setEmail('Signed-in account');
+      }
+    };
+    loadEmail();
+  }, []);
+
   const handleLogout = () => {
     Alert.alert(
       'Sign Out',
@@ -42,7 +62,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+              await AsyncStorage.clear();
             } catch { /* ignore */ }
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
           },
@@ -70,7 +90,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>Project Lookahead</Text>
-              <Text style={styles.profileRole}>Field Command</Text>
+              <Text style={styles.profileRole}>{email}</Text>
             </View>
           </View>
 
@@ -80,7 +100,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <SettingItem
             icon={<User size={18} color={COLORS.ink} />}
             title="Account"
-            subtitle="Manage your account settings"
+            subtitle={email}
             onPress={() => {}}
             iconBg="rgba(224, 123, 53, 0.1)"
           />
@@ -105,7 +125,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <SettingItem
             icon={<Zap size={18} color={COLORS.ink} />}
             title="Version"
-            subtitle="1.0.0 (Build 1)"
+            subtitle={appVersion}
             onPress={() => {}}
             showArrow={false}
             iconBg="rgba(224, 123, 53, 0.1)"
@@ -118,7 +138,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </TouchableOpacity>
 
           <Text style={styles.footerText}>
-            Project Lookahead v1.0.0{'\n'}Built for field operations.
+            Project Lookahead v{appVersion}{'\n'}Built for field operations.
           </Text>
         </ScrollView>
       </SafeAreaView>
