@@ -1,27 +1,91 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, SafeAreaView, Modal } from 'react-native';
-import { PlusCircle, FileText, Pencil, Clock } from 'lucide-react-native';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import {
+  Camera,
+  Clock,
+  FileText,
+  ImagePlus,
+  PlusCircle,
+  RefreshCw,
+  Trash2,
+  X,
+} from 'lucide-react-native';
+import { COLORS, FONT_SIZE, RADIUS, SPACING } from '../constants';
 import { apiFetch } from '../services/api';
-import { LogEntry } from '../types';
+import { DailyLogEntry, LogEntry } from '../types';
+
+const PENDING_LOGS_KEY = 'pending_logs';
+const DEFAULT_AUTHOR = 'Superintendent';
 
 interface DailyLogScreenProps {
   route: any;
 }
 
+const getToday = () => new Date().toISOString().slice(0, 10);
+
+const createEmptyEntry = (projectId: string): DailyLogEntry => ({
+  projectId,
+  date: getToday(),
+  weather: '',
+  workPerformed: '',
+  manpower: '',
+  equipment: '',
+  issuesDelays: '',
+  photos: [],
+  author: DEFAULT_AUTHOR,
+});
+
+const buildContent = (entry: DailyLogEntry) => [
+  `Weather: ${entry.weather}`,
+  `Work Performed: ${entry.workPerformed}`,
+  `Manpower: ${entry.manpower}`,
+  `Equipment on Site: ${entry.equipment}`,
+  `Issues/Delays: ${entry.issuesDelays || 'None reported'}`,
+  `Photos: ${entry.photos.length}`,
+].join('\n');
+
+const buildPayload = (entry: DailyLogEntry) => ({
+  ...entry,
+  content: buildContent(entry),
+});
+
 export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
-  const { projectId } = route.params || {};
+  const { projectId = 'default' } = route.params || {};
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newContent, setNewContent] = useState('');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [entry, setEntry] = useState<DailyLogEntry>(() => createEmptyEntry(projectId));
+
+  const updatePendingCount = useCallback(async () => {
+    const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
+    const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
+    setPendingCount(pending.length);
+  }, []);
 
   const fetchLogs = useCallback(async () => {
     try {
       setError(null);
-      const result = await apiFetch(`/api/logs/${projectId || 'default'}`);
+      const result = await apiFetch(`/api/projects/${projectId}/site-logs`);
       setLogs(result?.logs || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load logs.');
@@ -31,33 +95,139 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
     }
   }, [projectId]);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  const syncPendingLogs = useCallback(async () => {
+    const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
+    const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
+    if (!pending.length) {
+      setPendingCount(0);
+      return;
+    }
 
-  const onRefresh = () => {
+    const remaining: DailyLogEntry[] = [];
+    for (const pendingEntry of pending) {
+      try {
+        await apiFetch(`/api/projects/${pendingEntry.projectId}/site-logs`, {
+          method: 'POST',
+          body: JSON.stringify(buildPayload(pendingEntry)),
+        });
+      } catch {
+        remaining.push(pendingEntry);
+      }
+    }
+
+    await AsyncStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(remaining));
+    setPendingCount(remaining.length);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        await syncPendingLogs();
+      } catch {
+        await updatePendingCount();
+      }
+      await fetchLogs();
+    };
+
+    load();
+  }, [fetchLogs, syncPendingLogs, updatePendingCount]);
+
+  const onRefresh = async () => {
     setRefreshing(true);
-    fetchLogs();
+    try {
+      await syncPendingLogs();
+    } finally {
+      await fetchLogs();
+    }
   };
 
+  const updateEntry = (field: keyof DailyLogEntry, value: string | string[]) => {
+    setEntry(current => ({ ...current, [field]: value }));
+  };
+
+  const resetForm = () => {
+    setEntry(createEmptyEntry(projectId));
+    setShowAddModal(false);
+  };
+
+  const addPickedPhotos = (result: ImagePicker.ImagePickerResult) => {
+    if (result.canceled) return;
+    const newPhotos = result.assets
+      .map(asset => asset.base64)
+      .filter((photo): photo is string => Boolean(photo));
+    if (!newPhotos.length) {
+      Alert.alert('Photo unavailable', 'The selected photo could not be prepared. Please try again.');
+      return;
+    }
+    setEntry(current => ({ ...current, photos: [...current.photos, ...newPhotos] }));
+  };
+
+  const handleCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Camera permission required', 'Allow camera access to capture site photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      base64: true,
+      quality: 0.5,
+    });
+    addPickedPhotos(result);
+  };
+
+  const handleGallery = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      base64: true,
+      quality: 0.5,
+    });
+    addPickedPhotos(result);
+  };
+
+  const removePhoto = (index: number) => {
+    setEntry(current => ({
+      ...current,
+      photos: current.photos.filter((_, photoIndex) => photoIndex !== index),
+    }));
+  };
+
+  const isValidEntry = Boolean(
+    entry.date.trim()
+    && entry.weather.trim()
+    && entry.workPerformed.trim()
+    && entry.manpower.trim()
+    && entry.equipment.trim(),
+  );
+
   const handleAddLog = async () => {
-    if (!newContent.trim()) return;
+    if (!isValidEntry || submitting) return;
+    setSubmitting(true);
     try {
-      await apiFetch('/api/logs', {
+      await apiFetch(`/api/projects/${projectId}/site-logs`, {
         method: 'POST',
-        body: JSON.stringify({ projectId, content: newContent.trim() }),
+        body: JSON.stringify(buildPayload(entry)),
       });
-      setNewContent('');
-      setShowAddModal(false);
-      fetchLogs();
-    } catch (err: any) {
-      // silent fail
+      resetForm();
+      await fetchLogs();
+    } catch {
+      const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
+      const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
+      const updated = [...pending, entry];
+      await AsyncStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(updated));
+      setPendingCount(updated.length);
+      resetForm();
+      Alert.alert('Saved offline', 'This daily log will sync automatically when a connection is available.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const renderItem = ({ item }: { item: LogEntry }) => (
@@ -75,19 +245,23 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>JOURNAL</Text>
             <Text style={styles.title}>Daily Logs</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => setShowAddModal(true)}
-          >
+          <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
             <PlusCircle size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
+
+        {pendingCount > 0 && (
+          <View style={styles.syncBadge}>
+            <RefreshCw size={14} color={COLORS.warning} />
+            <Text style={styles.syncBadgeText}>{pendingCount} LOG{pendingCount === 1 ? '' : 'S'} TO SYNC</Text>
+          </View>
+        )}
 
         {error && (
           <View style={styles.errorBanner}>
@@ -103,7 +277,7 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
           <FlatList
             data={logs}
             renderItem={renderItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -119,223 +293,132 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
           />
         )}
 
-        <Modal
-          visible={showAddModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowAddModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>New Log Entry</Text>
-              <TextInput
-                style={styles.textArea}
-                multiline
-                numberOfLines={6}
-                placeholder="What happened on site today?"
-                placeholderTextColor={COLORS.textSecondary}
-                value={newContent}
-                onChangeText={setNewContent}
-                autoFocus
-              />
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.cancelBtn}
-                  onPress={() => { setShowAddModal(false); setNewContent(''); }}
-                >
-                  <Text style={styles.cancelText}>Cancel</Text>
+        <Modal visible={showAddModal} animationType="slide" onRequestClose={resetForm}>
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.greeting}>FIELD REPORT</Text>
+                <Text style={styles.modalTitle}>New Daily Log</Text>
+              </View>
+              <TouchableOpacity style={styles.closeBtn} onPress={resetForm}>
+                <X size={22} color={COLORS.ink} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={styles.formContent} keyboardShouldPersistTaps="handled">
+              <FormField label="Date" value={entry.date} onChangeText={value => updateEntry('date', value)} />
+              <FormField label="Weather" value={entry.weather} onChangeText={value => updateEntry('weather', value)} placeholder="Clear, 72F" />
+              <FormField label="Work Performed" value={entry.workPerformed} onChangeText={value => updateEntry('workPerformed', value)} multiline placeholder="Completed activities and locations" />
+              <FormField label="Manpower" value={entry.manpower} onChangeText={value => updateEntry('manpower', value)} placeholder="Crew counts by trade" />
+              <FormField label="Equipment on Site" value={entry.equipment} onChangeText={value => updateEntry('equipment', value)} placeholder="Active equipment and deliveries" />
+              <FormField label="Issues / Delays" value={entry.issuesDelays} onChangeText={value => updateEntry('issuesDelays', value)} multiline optional placeholder="Optional" />
+
+              <Text style={styles.fieldLabel}>Photos</Text>
+              <View style={styles.photoActions}>
+                <TouchableOpacity style={styles.photoAction} onPress={handleCamera}>
+                  <Camera size={18} color={COLORS.primary} />
+                  <Text style={styles.photoActionText}>Camera</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.submitBtn, !newContent.trim() && styles.submitBtnDisabled]}
-                  onPress={handleAddLog}
-                  disabled={!newContent.trim()}
-                >
-                  <Text style={styles.submitText}>Save Entry</Text>
+                <TouchableOpacity style={styles.photoAction} onPress={handleGallery}>
+                  <ImagePlus size={18} color={COLORS.primary} />
+                  <Text style={styles.photoActionText}>Gallery</Text>
                 </TouchableOpacity>
               </View>
+              <View style={styles.photoGrid}>
+                {entry.photos.map((photo, index) => (
+                  <View key={`${photo.slice(0, 12)}-${index}`} style={styles.photoTile}>
+                    <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photo} />
+                    <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removePhoto(index)}>
+                      <Trash2 size={14} color={COLORS.ink} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitBtn, (!isValidEntry || submitting) && styles.submitBtnDisabled]}
+                onPress={handleAddLog}
+                disabled={!isValidEntry || submitting}
+              >
+                {submitting ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.submitText}>Save Log</Text>}
+              </TouchableOpacity>
             </View>
-          </View>
+          </SafeAreaView>
         </Modal>
       </SafeAreaView>
     </View>
   );
 };
 
+interface FormFieldProps {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  multiline?: boolean;
+  optional?: boolean;
+  placeholder?: string;
+}
+
+const FormField: React.FC<FormFieldProps> = ({ label, value, onChangeText, multiline, optional, placeholder }) => (
+  <View style={styles.field}>
+    <Text style={styles.fieldLabel}>{label}{optional ? ' (Optional)' : ''}</Text>
+    <TextInput
+      style={[styles.input, multiline && styles.textArea]}
+      value={value}
+      onChangeText={onChangeText}
+      multiline={multiline}
+      numberOfLines={multiline ? 4 : 1}
+      placeholder={placeholder}
+      placeholderTextColor={COLORS.textSecondary}
+    />
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: 20,
-    paddingBottom: SPACING.md,
-  },
-  greeting: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: COLORS.primary,
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: FONT_SIZE.xxl,
-    fontWeight: '900',
-    color: COLORS.ink,
-  },
-  addBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: COLORS.surfaceSolid,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorBanner: {
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
-    padding: SPACING.md,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  listContent: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: 40,
-  },
-  logCard: {
-    backgroundColor: COLORS.surfaceSolid,
-    borderRadius: RADIUS.md,
-    padding: SPACING.lg,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  logHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  logDate: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-  },
-  logAuthor: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  logContent: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.ink,
-    lineHeight: 22,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.ink,
-    marginTop: SPACING.md,
-  },
-  emptySub: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.surfaceSolid,
-    borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: COLORS.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: COLORS.ink,
-    marginBottom: SPACING.md,
-  },
-  textArea: {
-    backgroundColor: COLORS.background,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    padding: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.ink,
-    minHeight: 120,
-    textAlignVertical: 'top',
-    marginBottom: SPACING.md,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-  },
-  submitBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  submitBtnDisabled: {
-    opacity: 0.5,
-  },
-  submitText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#fff',
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  safeArea: { flex: 1 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  greeting: { fontSize: FONT_SIZE.xs, fontWeight: '900', color: COLORS.primary, letterSpacing: 2, marginBottom: SPACING.xs },
+  title: { fontSize: FONT_SIZE.xxl, fontWeight: '900', color: COLORS.ink },
+  addBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
+  syncBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: SPACING.sm, marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: SPACING.sm, minHeight: 28, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.warning },
+  syncBadgeText: { color: COLORS.warning, fontSize: FONT_SIZE.xs, fontWeight: '800' },
+  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.error },
+  errorText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: '700' },
+  listContent: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },
+  logCard: { backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, padding: SPACING.lg, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  logHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm },
+  logHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  logDate: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+  logAuthor: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  logContent: { fontSize: FONT_SIZE.md, color: COLORS.ink, lineHeight: 22 },
+  emptyContainer: { alignItems: 'center', paddingTop: 80 },
+  emptyText: { fontSize: 18, fontWeight: '900', color: COLORS.ink, marginTop: SPACING.md },
+  emptySub: { fontSize: FONT_SIZE.md, color: COLORS.textSecondary, marginTop: SPACING.xs },
+  modalContainer: { flex: 1, backgroundColor: COLORS.background },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  modalTitle: { fontSize: FONT_SIZE.xl, fontWeight: '900', color: COLORS.ink },
+  closeBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
+  formContent: { padding: SPACING.lg, paddingBottom: SPACING.xl },
+  field: { marginBottom: SPACING.md },
+  fieldLabel: { marginBottom: SPACING.sm, color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, fontWeight: '800' },
+  input: { minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, color: COLORS.ink, fontSize: FONT_SIZE.md },
+  textArea: { minHeight: 96, textAlignVertical: 'top' },
+  photoActions: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+  photoAction: { flex: 1, minHeight: 44, flexDirection: 'row', gap: SPACING.sm, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
+  photoActionText: { color: COLORS.ink, fontSize: FONT_SIZE.md, fontWeight: '700' },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  photoTile: { width: '31%', aspectRatio: 1, borderRadius: RADIUS.sm, overflow: 'hidden', backgroundColor: COLORS.surfaceSolid },
+  photo: { width: '100%', height: '100%' },
+  removePhotoBtn: { position: 'absolute', top: SPACING.xs, right: SPACING.xs, width: 28, height: 28, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.background },
+  modalActions: { flexDirection: 'row', gap: SPACING.sm, padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.surfaceSolid },
+  cancelBtn: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
+  cancelText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.md, fontWeight: '700' },
+  submitBtn: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.primary },
+  submitBtnDisabled: { opacity: 0.5 },
+  submitText: { color: COLORS.background, fontSize: FONT_SIZE.md, fontWeight: '900' },
 });

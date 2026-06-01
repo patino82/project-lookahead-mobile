@@ -32,6 +32,20 @@ export interface LogEntry {
   date: string;
   content: string;
   author: string;
+  notionId?: string | null;
+  createdAt?: string;
+}
+
+export interface DailyLogEntry {
+  projectId: string;
+  date: string;
+  weather: string;
+  workPerformed: string;
+  manpower: string;
+  equipment: string;
+  issuesDelays: string;
+  photos: string[];
+  author: string;
 }
 
 export interface OpenItem {

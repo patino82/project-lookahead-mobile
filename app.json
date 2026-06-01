@@ -35,6 +35,14 @@
         {
           "iosUseFrameworks": "static"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Project Lookahead to access site photos for daily logs.",
+          "cameraPermission": "Allow Project Lookahead to capture site photos for daily logs.",
+          "microphonePermission": false
+        }
       ]
     ]
   }
