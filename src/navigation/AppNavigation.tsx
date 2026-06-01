@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View } from 'react-native';
-import { Home, Calendar, FileText, AlertCircle, FolderOpen } from 'lucide-react-native';
+import { Home, Calendar, FileText, AlertCircle, FolderOpen, LayoutGrid, BarChart3 } from 'lucide-react-native';
 import { COLORS } from '../constants';
 import { amplitude } from '../config/amplitude';
 
@@ -11,6 +11,8 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { ProjectListScreen } from '../screens/ProjectListScreen';
 import { TodayScreen } from '../screens/TodayScreen';
 import { ScheduleScreen } from '../screens/ScheduleScreen';
+import { KanbanScreen } from '../screens/KanbanScreen';
+import { GanttScreen } from '../screens/GanttScreen';
 import { DailyLogScreen } from '../screens/DailyLogScreen';
 import { OpenItemsScreen } from '../screens/OpenItemsScreen';
 import { DocumentsScreen } from '../screens/DocumentsScreen';
@@ -26,6 +28,10 @@ function TabIcon({ name, color }: { name: string; color: string }) {
       return <Home size={size} color={color} />;
     case 'Schedule':
       return <Calendar size={size} color={color} />;
+    case 'Kanban':
+      return <LayoutGrid size={size} color={color} />;
+    case 'Gantt':
+      return <BarChart3 size={size} color={color} />;
     case 'Logs':
       return <FileText size={size} color={color} />;
     case 'Open Issues':
@@ -74,6 +80,18 @@ function MainTabs({ route }: any) {
         component={ScheduleScreen}
         initialParams={{ projectId }}
         options={{ title: 'Schedule' }}
+      />
+      <Tab.Screen
+        name="Kanban"
+        component={KanbanScreen}
+        initialParams={{ projectId }}
+        options={{ title: 'Kanban' }}
+      />
+      <Tab.Screen
+        name="Gantt"
+        component={GanttScreen}
+        initialParams={{ projectId }}
+        options={{ title: 'Gantt' }}
       />
       <Tab.Screen
         name="Logs"

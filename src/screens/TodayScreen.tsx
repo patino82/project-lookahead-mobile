@@ -8,7 +8,7 @@ import { quickBooks } from '../data/quickbooks';
 import { apiFetch } from '../services/api';
 import { Task } from '../types';
 
-import { AlertCircle, ClipboardList, Bell, CheckCircle, CheckCheck, FileText, Zap } from 'lucide-react-native';
+import { AlertCircle, BarChart3, ClipboardList, Bell, CheckCircle, CheckCheck, FileText, LayoutGrid, Zap } from 'lucide-react-native';
 
 interface TodayScreenProps {
   route: any;
@@ -186,6 +186,14 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route, navigation }) =
                   <AlertCircle size={18} color={COLORS.rose} />
                   <Text style={styles.actionTitle}>Open Issues</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Kanban')}>
+                  <LayoutGrid size={18} color={COLORS.primary} />
+                  <Text style={styles.actionTitle}>Kanban</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Gantt')}>
+                  <BarChart3 size={18} color={COLORS.success} />
+                  <Text style={styles.actionTitle}>Gantt</Text>
+                </TouchableOpacity>
               </View>
             </View>
           }
@@ -350,11 +358,13 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: SPACING.sm,
     marginTop: SPACING.sm,
   },
   actionCard: {
     flex: 1,
+    flexBasis: '45%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
