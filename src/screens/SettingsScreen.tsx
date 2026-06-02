@@ -62,9 +62,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.clear();
-            } catch { /* ignore */ }
-            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+              await AsyncStorage.multiRemove(['accessToken', 'user', 'userEmail', 'pending_logs']);
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            } catch (err: any) {
+              Alert.alert('Sign out failed', err?.message || 'Unable to clear your local session. Please try again.');
+            }
           },
         },
       ]

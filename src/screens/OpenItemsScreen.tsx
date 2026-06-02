@@ -71,6 +71,10 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
     if (!saving) setModalVisible(false);
   };
 
+  const showError = (title: string, err: any, fallback: string) => {
+    Alert.alert(title, err?.message || fallback);
+  };
+
   const saveItem = async () => {
     if (!description.trim()) {
       Alert.alert('Description required', 'Add a description before saving.');
@@ -94,8 +98,8 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
         else await fetchItems();
       }
       setModalVisible(false);
-    } catch {
-      Alert.alert('Save failed', 'The open item could not be saved.');
+    } catch (err: any) {
+      showError('Save failed', err, 'The open item could not be saved.');
     } finally {
       setSaving(false);
     }
@@ -105,10 +109,20 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
     const status = item.status === 'open' ? 'closed' : 'open';
     setItems(current => current.map(currentItem => currentItem.id === item.id ? { ...currentItem, status } : currentItem));
     try {
-      await apiFetch(`${prefix}/${item.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-    } catch {
+      if (status === 'closed') {
+        try {
+          await apiFetch(`${prefix}/${item.id}`, { method: 'POST', body: JSON.stringify({ status: 'completed' }) });
+        } catch (postError: any) {
+          if (postError?.status !== 404 && postError?.status !== 405) throw postError;
+          await apiFetch(`${prefix}/${item.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+        }
+      } else {
+        await apiFetch(`${prefix}/${item.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      }
+      await fetchItems();
+    } catch (err: any) {
       setItems(current => current.map(currentItem => currentItem.id === item.id ? item : currentItem));
-      Alert.alert('Update failed', 'The item status could not be saved.');
+      showError('Update failed', err, 'The item status could not be saved.');
     }
   };
 
@@ -122,8 +136,8 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
           try {
             await apiFetch(`${prefix}/${item.id}`, { method: 'DELETE' });
             setItems(current => current.filter(currentItem => currentItem.id !== item.id));
-          } catch {
-            Alert.alert('Delete failed', 'The open item could not be deleted.');
+          } catch (err: any) {
+            showError('Delete failed', err, 'The open item could not be deleted.');
           }
         },
       },

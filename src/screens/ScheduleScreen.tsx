@@ -131,9 +131,9 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     updateLocalEntry(taskId, date, { symbol: nextSymbol });
     try {
       await saveStatus(taskId, date, nextSymbol, previous?.notes);
-    } catch {
+    } catch (err: any) {
       updateLocalEntry(taskId, date, { symbol: previous?.symbol || '' });
-      Alert.alert('Update failed', 'The status could not be saved. Try again when your connection is stable.');
+      Alert.alert('Update failed', err?.message || 'The status could not be saved. Try again when your connection is stable.');
     }
   };
 
@@ -150,9 +150,9 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     setNoteCell(null);
     try {
       await saveStatus(noteCell.taskId, noteCell.date, previous?.symbol || '', notes);
-    } catch {
+    } catch (err: any) {
       updateLocalEntry(noteCell.taskId, noteCell.date, { notes: previous?.notes });
-      Alert.alert('Update failed', 'The note could not be saved.');
+      Alert.alert('Update failed', err?.message || 'The note could not be saved.');
     }
   };
 

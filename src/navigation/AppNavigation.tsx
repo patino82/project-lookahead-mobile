@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View } from 'react-native';
-import { Home, Calendar, FileText, AlertCircle, FolderOpen, LayoutGrid, BarChart3 } from 'lucide-react-native';
+import { Home, Calendar, FileText, AlertCircle, FolderOpen, LayoutGrid, BarChart3, Settings } from 'lucide-react-native';
 import { COLORS } from '../constants';
 import { amplitude } from '../config/amplitude';
 
@@ -36,6 +36,10 @@ function TabIcon({ name, color }: { name: string; color: string }) {
       return <FileText size={size} color={color} />;
     case 'Open Issues':
       return <AlertCircle size={size} color={color} />;
+    case 'Documents':
+      return <FolderOpen size={size} color={color} />;
+    case 'Settings':
+      return <Settings size={size} color={color} />;
     case 'Projects':
       return <FolderOpen size={size} color={color} />;
     default:
@@ -61,8 +65,8 @@ function MainTabs({ route }: any) {
           paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
+          fontSize: 10,
+          fontWeight: '800',
         },
         tabBarIcon: ({ focused, color }) => (
           <TabIcon name={route.name} color={color} />
@@ -106,9 +110,20 @@ function MainTabs({ route }: any) {
         options={{ title: 'Open Issues' }}
       />
       <Tab.Screen
+        name="Documents"
+        component={DocumentsScreen}
+        initialParams={{ projectId }}
+        options={{ title: 'Documents' }}
+      />
+      <Tab.Screen
         name="Projects"
         component={ProjectListScreen}
         options={{ title: 'Projects' }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Tab.Navigator>
   );

@@ -1,6 +1,6 @@
 # Mobile App — Task Status
 
-> Last updated: 2026-05-31
+> Last updated: 2026-06-02
 > Read this file before doing ANY work in this directory.
 
 ## Current State
@@ -14,6 +14,7 @@
 - 2026-05-20: Initial project setup with Expo
 - 2026-05-26: Added OpenItemsScreen with real API calls (partial)
 - 2026-05-31: Phase 2 UI/UX revamp of LoginScreen and ProjectListScreen
+- 2026-06-02: Fixed Open Items completion/logout/API error surfacing, added API-backed Documents screen, and exposed Documents/Settings in dark themed tabs.
 
 ## Phase 2 Changes (2026-05-31)
 
@@ -58,10 +59,10 @@
 
 ## Next Steps (Priority Order)
 1. ~~Phase 2 Login + ProjectList revamp~~ — COMPLETE
-2. Phase 2 remaining screens: TodayScreen, ScheduleScreen, DailyLogScreen, OpenItemsScreen, DocumentsScreen, SettingsScreen
+2. ~~Phase 2 remaining screens: TodayScreen, ScheduleScreen, DailyLogScreen, OpenItemsScreen, DocumentsScreen, SettingsScreen~~ — COMPLETE
 3. Offline support (SQLite or WatermelonDB with sync queue)
 4. E2E testing on physical device
-5. Fix apiFetch error handling (don't silently swallow errors)
+5. ~~Fix apiFetch error handling (don't silently swallow errors)~~ — COMPLETE
 
 ## UI/UX Redesign Details
 See: ../PROJECT_STATUS.md "Key Issues (All Codebases)"
@@ -86,10 +87,7 @@ Auth: After login, JWT is in AsyncStorage under 'accessToken'.
 Send as: Authorization: Bearer ***
 
 ## Known Bugs
-- Check button in OpenItemsScreen does nothing (no onPress handler)
-- Settings logout is empty onPress
-- ScheduleScreen entirely mock data
-- apiFetch silently catches errors with console.error only
+- No known Phase 2 screen bugs after 2026-06-02 pass.
 
 ## How to Update This File
 Add a line under "Last Completed Work" after each session:

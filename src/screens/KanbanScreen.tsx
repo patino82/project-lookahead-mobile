@@ -124,9 +124,9 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
         method: 'PATCH',
         body: JSON.stringify(updated),
       });
-    } catch {
+    } catch (err: any) {
       setStatuses(current => ({ ...current, [task.taskId]: previous }));
-      Alert.alert('Update failed', 'The task status could not be saved.');
+      Alert.alert('Update failed', err?.message || 'The task status could not be saved.');
     }
   };
 

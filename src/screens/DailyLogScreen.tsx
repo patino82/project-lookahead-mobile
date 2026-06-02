@@ -77,9 +77,13 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
   const [entry, setEntry] = useState<DailyLogEntry>(() => createEmptyEntry(projectId));
 
   const updatePendingCount = useCallback(async () => {
-    const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
-    const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
-    setPendingCount(pending.length);
+    try {
+      const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
+      const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
+      setPendingCount(pending.length);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to inspect offline daily logs.');
+    }
   }, []);
 
   const fetchLogs = useCallback(async () => {
@@ -110,7 +114,8 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
           method: 'POST',
           body: JSON.stringify(buildPayload(pendingEntry)),
         });
-      } catch {
+      } catch (err: any) {
+        setError(err?.message || 'Some offline daily logs could not sync yet.');
         remaining.push(pendingEntry);
       }
     }
@@ -123,7 +128,8 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
     const load = async () => {
       try {
         await syncPendingLogs();
-      } catch {
+      } catch (err: any) {
+        setError(err?.message || 'Offline daily logs could not sync yet.');
         await updatePendingCount();
       }
       await fetchLogs();
@@ -212,14 +218,18 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
       });
       resetForm();
       await fetchLogs();
-    } catch {
-      const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
-      const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
-      const updated = [...pending, entry];
-      await AsyncStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(updated));
-      setPendingCount(updated.length);
-      resetForm();
-      Alert.alert('Saved offline', 'This daily log will sync automatically when a connection is available.');
+    } catch (err: any) {
+      try {
+        const stored = await AsyncStorage.getItem(PENDING_LOGS_KEY);
+        const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
+        const updated = [...pending, entry];
+        await AsyncStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(updated));
+        setPendingCount(updated.length);
+        resetForm();
+        Alert.alert('Saved offline', `${err?.message || 'The server could not save this log.'} This daily log will sync automatically when a connection is available.`);
+      } catch (storageErr: any) {
+        Alert.alert('Save failed', storageErr?.message || err?.message || 'The daily log could not be saved.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -264,9 +274,9 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
         )}
 
         {error && (
-          <View style={styles.errorBanner}>
+          <TouchableOpacity style={styles.errorBanner} onPress={fetchLogs}>
             <Text style={styles.errorText}>{error}</Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {loading && !refreshing ? (

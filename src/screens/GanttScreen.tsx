@@ -184,9 +184,9 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
     setStatuses(current => ({ ...current, [task.taskId]: updated }));
     try {
       await apiFetch(`/api/projects/${projectId}/status`, { method: 'PATCH', body: JSON.stringify(updated) });
-    } catch {
+    } catch (err: any) {
       setStatuses(current => ({ ...current, [task.taskId]: previous }));
-      Alert.alert('Update failed', 'The task status could not be saved.');
+      Alert.alert('Update failed', err?.message || 'The task status could not be saved.');
     }
   };
 
