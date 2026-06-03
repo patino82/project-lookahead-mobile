@@ -103,13 +103,14 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     [entries],
   );
 
-  const saveStatus = async (taskId: string, date: string, symbol: string, notes?: string | null) => {
+  const saveLookaheadEntry = async (taskId: string, date: string, symbol: string, notes?: string | null) => {
     const prefix = `/api/projects/${projectId || 'default'}`;
     const body = JSON.stringify({ taskId, date, symbol, notes });
     try {
-      await apiFetch(`${prefix}/status`, { method: 'PATCH', body });
+      await apiFetch(`${prefix}/lookahead`, { method: 'POST', body });
     } catch (firstError: any) {
       if (firstError?.status !== 404 && firstError?.status !== 405) throw firstError;
+      // Fallback: try legacy endpoint
       await apiFetch(`${prefix}/tasks/${taskId}/status`, {
         method: 'POST',
         body: JSON.stringify({ date, symbol, notes }),
@@ -130,7 +131,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     const nextSymbol = SYMBOLS[(SYMBOLS.indexOf(previous?.symbol || '') + 1) % SYMBOLS.length];
     updateLocalEntry(taskId, date, { symbol: nextSymbol });
     try {
-      await saveStatus(taskId, date, nextSymbol, previous?.notes);
+      await saveLookaheadEntry(taskId, date, nextSymbol, previous?.notes);
     } catch (err: any) {
       updateLocalEntry(taskId, date, { symbol: previous?.symbol || '' });
       Alert.alert('Update failed', err?.message || 'The status could not be saved. Try again when your connection is stable.');
@@ -149,7 +150,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     updateLocalEntry(noteCell.taskId, noteCell.date, { notes });
     setNoteCell(null);
     try {
-      await saveStatus(noteCell.taskId, noteCell.date, previous?.symbol || '', notes);
+      await saveLookaheadEntry(noteCell.taskId, noteCell.date, previous?.symbol || '', notes);
     } catch (err: any) {
       updateLocalEntry(noteCell.taskId, noteCell.date, { notes: previous?.notes });
       Alert.alert('Update failed', err?.message || 'The note could not be saved.');

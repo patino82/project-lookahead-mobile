@@ -35,7 +35,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       clientId: CLIENT_ID,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      usePKCE: false,
+      usePKCE: true,
     },
     discovery
   );
@@ -60,8 +60,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const checkExistingSession = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (token) {
+      const raw = await AsyncStorage.getItem('auth');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.expiresAt && Date.now() >= parsed.expiresAt) {
+          await AsyncStorage.multiRemove(['auth', 'accessToken']);
+          return;
+        }
+        navigation.replace('MainTabs');
+        return;
+      }
+      // Legacy: check old key
+      const legacy = await AsyncStorage.getItem('accessToken');
+      if (legacy) {
         navigation.replace('MainTabs');
       }
     } catch {
@@ -94,8 +105,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       const data = await res.json();
       if (data.ok && data.token) {
+        // Store token with expiry if provided, otherwise default 1hr
+        const expiresIn = data.expiresIn || 3600;
+        const expiresAt = Date.now() + expiresIn * 1000;
+        await AsyncStorage.setItem('auth', JSON.stringify({
+          accessToken: data.token,
+          expiresAt,
+        }));
+        // Keep legacy key for backward compat
         await AsyncStorage.setItem('accessToken', data.token);
-        amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
+        amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: !!data.isNewUser });
         navigation.replace('MainTabs');
       } else {
         throw new Error(data.error || 'Exchange failed');

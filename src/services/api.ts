@@ -24,21 +24,43 @@ async function parseErrorBody(res: Response): Promise<string> {
   return `API error ${res.status}`;
 }
 
+interface TokenData {
+  accessToken: string;
+  expiresAt?: number; // unix ms
+}
+
+async function getValidToken(): Promise<string | null> {
+  const raw = await AsyncStorage.getItem('auth');
+  if (!raw) {
+    // fallback: check legacy key
+    const legacy = await AsyncStorage.getItem('accessToken');
+    return legacy;
+  }
+  try {
+    const parsed = JSON.parse(raw) as TokenData;
+    if (parsed.expiresAt && Date.now() >= parsed.expiresAt) {
+      // Token expired — clear it
+      await AsyncStorage.removeItem('auth');
+      return null;
+    }
+    return parsed.accessToken;
+  } catch {
+    // malformed — treat as plain token string
+    return raw;
+  }
+}
+
 export async function apiFetch(path: string, opts: RequestInit = {}) {
   const headers = new Headers(opts.headers || {});
   headers.set('Content-Type', headers.get('Content-Type') || 'application/json');
 
-  const token = await AsyncStorage.getItem('accessToken');
+  const token = await getValidToken();
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  if (opts.signal) {
-    // If caller passed a signal, race both
-    // (we still use our own timeout as primary)
-  }
 
   let res: Response;
   try {
@@ -55,6 +77,12 @@ export async function apiFetch(path: string, opts: RequestInit = {}) {
     throw new ApiError('No connection. Check your network and try again.', 0);
   } finally {
     clearTimeout(timer);
+  }
+
+  if (res.status === 401) {
+    // Token rejected — clear stored auth
+    await AsyncStorage.multiRemove(['auth', 'accessToken']);
+    throw new ApiError('Session expired. Please sign in again.', 401);
   }
 
   if (!res.ok) {
