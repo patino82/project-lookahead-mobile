@@ -5,6 +5,7 @@ import { Card } from '../components/Card';
 import { Project } from '../types';
 import { amplitude } from '../config/amplitude';
 import { apiFetch } from '../services/api';
+import { getProjects } from '../services/offline-db';
 import { LayoutGrid, ChevronRight, MapPin, CalendarDays, Activity, Search } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ProjectListScreenProps } from '../navigation/types';
@@ -15,20 +16,26 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  const applyProjects = (sourceProjects: any[]) => {
+    const mappedProjects: Project[] = sourceProjects.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      location: p.location || 'Site unmapped',
+      status: p.status,
+      lastUpdated: p.lastUpdated || new Date(p.updatedAt || Date.now()).toISOString().slice(0, 10),
+    }));
+    setProjects(mappedProjects);
+  };
 
   const fetchProjects = async () => {
     try {
       setError(null);
       const data = await apiFetch('/api/projects');
       if (data && data.projects) {
-        const mappedProjects: Project[] = data.projects.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          location: p.location || 'Site unmapped',
-          status: p.status,
-          lastUpdated: new Date(p.updatedAt).toISOString().slice(0, 10),
-        }));
-        setProjects(mappedProjects);
+        applyProjects(data.projects);
+        setIsOffline(Boolean(data.isOffline));
       }
     } catch (err) {
       console.error('Failed to fetch projects', err);
@@ -40,7 +47,16 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
   };
 
   useEffect(() => {
-    fetchProjects();
+    const load = async () => {
+      const cachedProjects = await getProjects();
+      if (cachedProjects.length) {
+        applyProjects(cachedProjects);
+        setIsOffline(true);
+        setLoading(false);
+      }
+      await fetchProjects();
+    };
+    load();
   }, []);
 
   const onRefresh = () => {
@@ -114,6 +130,11 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
         </View>
 
         <View style={styles.searchArea}>
+          {isOffline && (
+            <View style={styles.offlineBadge}>
+              <Text style={styles.offlineText}>OFFLINE MODE</Text>
+            </View>
+          )}
           <View style={styles.searchBox}>
             <Search size={16} color={COLORS.textSecondary} />
             <TextInput
@@ -202,6 +223,22 @@ const styles = StyleSheet.create({
   searchArea: {
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
+  },
+  offlineBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.24)',
+  },
+  offlineText: {
+    color: COLORS.warning,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   searchBox: {
     minHeight: 44,

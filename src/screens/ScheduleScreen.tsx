@@ -16,6 +16,7 @@ import {
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from '../constants';
 import { apiFetch } from '../services/api';
+import { getTasks } from '../services/offline-db';
 
 const CELL_WIDTH = 52;
 const TASK_WIDTH = 180;
@@ -57,6 +58,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const [noteCell, setNoteCell] = useState<{ taskId: string; date: string } | null>(null);
   const [noteText, setNoteText] = useState('');
 
@@ -66,6 +68,24 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     date.setDate(date.getDate() - ((day + 6) % 7) + weekOffset * 7);
     return date.toISOString().slice(0, 10);
   }, [weekOffset]);
+
+  const defaultWeekDates = useCallback(() => {
+    const start = new Date(`${weekStart}T12:00:00`);
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      return date.toISOString().slice(0, 10);
+    });
+  }, [weekStart]);
+
+  const mapTasks = (sourceTasks: any[]) => sourceTasks.map((task: any) => ({
+    id: task.id || task.taskId,
+    taskId: task.taskId || task.id,
+    taskName: task.taskName || task.title || 'Untitled task',
+    phase: task.phase || 'Unassigned',
+    trade: task.trade,
+    ownerCompany: task.ownerCompany,
+  }));
 
   const fetchSchedule = useCallback(async () => {
     try {
@@ -77,14 +97,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
       ]);
       setWeekDates(lookaheadResult?.weekDates || []);
       setEntries(lookaheadResult?.entries || []);
-      setTasks((tasksResult?.tasks || tasksResult || []).map((task: any) => ({
-        id: task.id || task.taskId,
-        taskId: task.taskId || task.id,
-        taskName: task.taskName || task.title || 'Untitled task',
-        phase: task.phase || 'Unassigned',
-        trade: task.trade,
-        ownerCompany: task.ownerCompany,
-      })));
+      setTasks(mapTasks(tasksResult?.tasks || tasksResult || []));
+      setIsOffline(Boolean(lookaheadResult?.isOffline || tasksResult?.isOffline));
     } catch (err: any) {
       setError(err.message || 'Failed to load the lookahead.');
     } finally {
@@ -94,8 +108,19 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
   }, [projectId, weekStart]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchSchedule();
+    const load = async () => {
+      setLoading(true);
+      const cachedTasks = await getTasks(projectId || 'default');
+      if (cachedTasks.length) {
+        setTasks(mapTasks(cachedTasks));
+        setWeekDates(defaultWeekDates());
+        setEntries([]);
+        setIsOffline(true);
+        setLoading(false);
+      }
+      await fetchSchedule();
+    };
+    load();
   }, [fetchSchedule]);
 
   const entryFor = useCallback(
@@ -252,6 +277,11 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
             <Text style={styles.errorText}>{error} Tap to retry.</Text>
           </TouchableOpacity>
         )}
+        {isOffline && (
+          <View style={styles.offlineBadge}>
+            <Text style={styles.offlineText}>OFFLINE MODE - CACHED TASKS</Text>
+          </View>
+        )}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View>
             <View style={styles.dateRow}>
@@ -328,6 +358,8 @@ const styles = StyleSheet.create({
   weekLabel: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: 'rgba(239,68,68,0.1)' },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
+  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: 'rgba(245, 158, 11, 0.12)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.24)' },
+  offlineText: { color: COLORS.warning, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   dateRow: { flexDirection: 'row', borderTopWidth: 1, borderBottomWidth: 1, borderColor: COLORS.border },
   taskHeader: { width: TASK_WIDTH, padding: SPACING.sm, justifyContent: 'center', backgroundColor: COLORS.soft },
   taskHeaderText: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },

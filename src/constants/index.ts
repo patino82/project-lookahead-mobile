@@ -4,6 +4,8 @@ export const COLORS = {
   secondary: '#f0944f', // Brand Soft Orange
   background: '#0b0e12', // Cyber Dark
   surface: 'rgba(22, 28, 36, 0.82)', 
+  surfaceSolid: '#161c24',
+  glass: 'rgba(255, 255, 255, 0.05)',
   ink: '#e6e9ec',       // Cyber White
   text: '#e6e9ec',
   textSecondary: '#7a8199', // Muted Blue/Gray
@@ -36,6 +38,15 @@ export const SPACING = {
   lg: 24,
   xl: 32,
   xxl: 60,
+};
+
+export const FONT_SIZE = {
+  xs: 10,
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 20,
+  xxl: 28,
 };
 
 export const RADIUS = {

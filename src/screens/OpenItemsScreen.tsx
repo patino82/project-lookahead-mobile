@@ -17,6 +17,8 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { AlertTriangle, Calendar, CheckCircle, Circle, Clock, Plus, Trash2 } from 'lucide-react-native';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from '../constants';
 import { apiFetch } from '../services/api';
+import { getOpenItems, saveOpenItems } from '../services/offline-db';
+import { scheduleOpenItemFollowUp } from '../services/notifications';
 import { OpenItem } from '../types';
 
 const PRIORITIES = ['High', 'Medium', 'Low'];
@@ -38,6 +40,7 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
   const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   const prefix = `/api/projects/${projectId || 'default'}/open-items`;
 
@@ -46,6 +49,7 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
       setError(null);
       const result = await apiFetch(prefix);
       setItems(result?.items || result || []);
+      setIsOffline(Boolean(result?.isOffline));
     } catch (err: any) {
       setError(err.message || 'Failed to load open items.');
     } finally {
@@ -55,7 +59,16 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
   }, [prefix]);
 
   useEffect(() => {
-    fetchItems();
+    const load = async () => {
+      const cachedItems = await getOpenItems(projectId || 'default');
+      if (cachedItems.length) {
+        setItems(cachedItems);
+        setIsOffline(true);
+        setLoading(false);
+      }
+      await fetchItems();
+    };
+    load();
   }, [fetchItems]);
 
   const openForm = (item?: OpenItem) => {
@@ -91,10 +104,16 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
         const result = await apiFetch(`${prefix}/${editingItem.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
         const updated = result?.item || { ...editingItem, ...payload };
         setItems(current => current.map(item => item.id === editingItem.id ? updated : item));
+        await saveOpenItems([updated], projectId || 'default');
+        await scheduleOpenItemFollowUp(updated.id, updated.description, updated.dueDate);
       } else {
         const result = await apiFetch(prefix, { method: 'POST', body: JSON.stringify(payload) });
         const created = result?.item || result;
-        if (created?.id) setItems(current => [created, ...current]);
+        if (created?.id) {
+          setItems(current => [created, ...current]);
+          await saveOpenItems([created], projectId || 'default');
+          await scheduleOpenItemFollowUp(created.id, created.description, created.dueDate);
+        }
         else await fetchItems();
       }
       setModalVisible(false);
@@ -203,6 +222,11 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
           <Text style={styles.count}>{items.filter(item => item.status === 'open').length} OPEN</Text>
         </View>
         {error && <TouchableOpacity style={styles.errorBanner} onPress={fetchItems}><Text style={styles.errorText}>{error} Tap to retry.</Text></TouchableOpacity>}
+        {isOffline && (
+          <View style={styles.offlineBadge}>
+            <Text style={styles.offlineText}>OFFLINE MODE - CACHED ITEMS</Text>
+          </View>
+        )}
         {loading && !refreshing ? (
           <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>
         ) : (
@@ -284,6 +308,8 @@ const styles = StyleSheet.create({
   count: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(224,123,53,0.1)' },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: 'rgba(239,68,68,0.1)' },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
+  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: 'rgba(245, 158, 11, 0.12)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.24)' },
+  offlineText: { color: COLORS.warning, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: 104 },
   emptyList: { flexGrow: 1 },
   card: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md, marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceSolid },

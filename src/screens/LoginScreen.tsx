@@ -9,6 +9,8 @@ import { amplitude } from '../config/amplitude';
 import { ENV } from '../config/env';
 import { Zap } from 'lucide-react-native';
 import type { LoginScreenProps } from '../navigation/types';
+import { authenticateWithBiometric, isBiometricAvailable, isBiometricEnabled } from '../services/biometric-auth';
+import { registerForPushNotificationsAsync } from '../services/notifications';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -34,6 +36,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const checkExistingSession = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     if (token) {
+      const biometricEnabled = await isBiometricEnabled();
+      if (biometricEnabled) {
+        const unlocked = await authenticateWithBiometric();
+        if (!unlocked) return;
+      }
       navigation.replace('MainTabs');
     }
   };
@@ -83,6 +90,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       if (data.ok && data.token) {
         await AsyncStorage.setItem('accessToken', data.token);
         amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
+        const [biometricAvailable, biometricEnabled] = await Promise.all([
+          isBiometricAvailable(),
+          isBiometricEnabled(),
+        ]);
+        if (biometricAvailable && biometricEnabled) {
+          const unlocked = await authenticateWithBiometric();
+          if (!unlocked) return;
+        }
+        registerForPushNotificationsAsync().catch(error => console.error('Push registration failed', error));
         navigation.replace('MainTabs');
       } else {
         throw new Error(data.error || 'Exchange failed');

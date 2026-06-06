@@ -43,6 +43,20 @@
           "cameraPermission": "Allow Project Lookahead to capture site photos for daily logs.",
           "microphonePermission": false
         }
+      ],
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#e07b35"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Project Lookahead to use Face ID for biometric login."
+        }
       ]
     ]
   }

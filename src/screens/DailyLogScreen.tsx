@@ -28,6 +28,7 @@ import {
 } from 'lucide-react-native';
 import { COLORS, FONT_SIZE, RADIUS, SPACING } from '../constants';
 import { apiFetch } from '../services/api';
+import { getDailyLogs, saveDailyLogs } from '../services/offline-db';
 import { DailyLogEntry, LogEntry } from '../types';
 
 const PENDING_LOGS_KEY = 'pending_logs';
@@ -74,6 +75,7 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
   const [entry, setEntry] = useState<DailyLogEntry>(() => createEmptyEntry(projectId));
 
   const updatePendingCount = useCallback(async () => {
@@ -91,6 +93,7 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
       setError(null);
       const result = await apiFetch(`/api/projects/${projectId}/site-logs`);
       setLogs(result?.logs || []);
+      setIsOffline(Boolean(result?.isOffline));
     } catch (err: any) {
       setError(err.message || 'Failed to load logs.');
     } finally {
@@ -127,6 +130,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
   useEffect(() => {
     const load = async () => {
       try {
+        const cachedLogs = await getDailyLogs(projectId);
+        if (cachedLogs.length) {
+          setLogs(cachedLogs);
+          setIsOffline(true);
+          setLoading(false);
+        }
         await syncPendingLogs();
       } catch (err: any) {
         setError(err?.message || 'Offline daily logs could not sync yet.');
@@ -224,6 +233,14 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
         const pending: DailyLogEntry[] = stored ? JSON.parse(stored) : [];
         const updated = [...pending, entry];
         await AsyncStorage.setItem(PENDING_LOGS_KEY, JSON.stringify(updated));
+        await saveDailyLogs([{
+          id: `offline-${Date.now()}`,
+          projectId,
+          date: entry.date,
+          content: buildContent(entry),
+          author: entry.author,
+          createdAt: new Date().toISOString(),
+        }], projectId);
         setPendingCount(updated.length);
         resetForm();
         Alert.alert('Saved offline', `${err?.message || 'The server could not save this log.'} This daily log will sync automatically when a connection is available.`);
@@ -270,6 +287,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
           <View style={styles.syncBadge}>
             <RefreshCw size={14} color={COLORS.warning} />
             <Text style={styles.syncBadgeText}>{pendingCount} LOG{pendingCount === 1 ? '' : 'S'} TO SYNC</Text>
+          </View>
+        )}
+
+        {isOffline && (
+          <View style={styles.offlineBadge}>
+            <Text style={styles.offlineText}>OFFLINE MODE - CACHED LOGS</Text>
           </View>
         )}
 
@@ -397,6 +420,8 @@ const styles = StyleSheet.create({
   addBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   syncBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: SPACING.sm, marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: SPACING.sm, minHeight: 28, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.warning },
   syncBadgeText: { color: COLORS.warning, fontSize: FONT_SIZE.xs, fontWeight: '800' },
+  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: 'rgba(245, 158, 11, 0.12)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.24)' },
+  offlineText: { color: COLORS.warning, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.error },
   errorText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: '700' },
   listContent: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },

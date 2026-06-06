@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, 
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
 import { Card } from '../components/Card';
 import { apiFetch } from '../services/api';
+import { getDashboard } from '../services/offline-db';
 import { Zap, AlertCircle, Calendar, Info, ChevronRight, Activity } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -16,6 +17,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
 
   const fetchDashboard = async () => {
     if (!projectId) return;
@@ -24,6 +26,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
       const summary = await apiFetch(`/api/projects/${projectId}/dashboard`);
       if (summary) {
         setData(summary);
+        setIsOffline(Boolean(summary.isOffline));
       }
     } catch (err) {
       console.error('Failed to fetch dashboard', err);
@@ -37,7 +40,16 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
   useEffect(() => {
     if (projectId) {
       setLoading(true);
-      fetchDashboard();
+      const load = async () => {
+        const cached = await getDashboard(projectId);
+        if (cached) {
+          setData(cached);
+          setIsOffline(true);
+          setLoading(false);
+        }
+        await fetchDashboard();
+      };
+      load();
     }
   }, [projectId]);
 
@@ -114,6 +126,11 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
         </LinearGradient>
         
         <View style={styles.content}>
+          {isOffline && (
+            <View style={styles.offlineBadge}>
+              <Text style={styles.offlineText}>OFFLINE MODE - CACHED DASHBOARD</Text>
+            </View>
+          )}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>High Priority Actions</Text>
             <Zap size={14} color={COLORS.primary} />
@@ -244,6 +261,23 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: SPACING.md,
     paddingBottom: 40,
+  },
+  offlineBadge: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    marginLeft: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.24)',
+  },
+  offlineText: {
+    color: COLORS.warning,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   sectionHeader: {
     flexDirection: 'row',

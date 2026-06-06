@@ -1,9 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ScrollView, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { LogOut, User, Bell, ShieldCheck, ChevronRight, Zap } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
+import {
+  authenticateWithBiometric,
+  disableBiometricAuth,
+  enableBiometricAuth,
+  getBiometricLabel,
+  isBiometricAvailable,
+  isBiometricEnabled,
+} from '../services/biometric-auth';
+import { clearAll } from '../services/offline-db';
+import {
+  areNotificationsEnabled,
+  registerForPushNotificationsAsync,
+  setNotificationsEnabled,
+} from '../services/notifications';
 
 interface SettingsScreenProps {
   navigation: any;
@@ -16,9 +30,10 @@ interface SettingItemProps {
   onPress: () => void;
   showArrow?: boolean;
   iconBg?: string;
+  rightElement?: React.ReactNode;
 }
 
-const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPress, showArrow = true, iconBg }) => (
+const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPress, showArrow = true, iconBg, rightElement }) => (
   <TouchableOpacity style={styles.settingRow} onPress={onPress} activeOpacity={0.7}>
     <View style={[styles.settingIcon, { backgroundColor: iconBg || 'rgba(255,255,255,0.06)' }]}>
       {icon}
@@ -27,12 +42,16 @@ const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPres
       <Text style={styles.settingTitle}>{title}</Text>
       {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
     </View>
-    {showArrow && <ChevronRight size={18} color={COLORS.textSecondary} />}
+    {rightElement || (showArrow && <ChevronRight size={18} color={COLORS.textSecondary} />)}
   </TouchableOpacity>
 );
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('Signed-in account');
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState('Biometric Login');
+  const [notificationsEnabled, setNotificationsEnabledState] = useState(false);
   const appVersion = Constants.expoConfig?.version || '1.0.0';
 
   useEffect(() => {
@@ -49,7 +68,47 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       }
     };
     loadEmail();
+    const loadSecuritySettings = async () => {
+      const [available, enabled, label, pushEnabled] = await Promise.all([
+        isBiometricAvailable(),
+        isBiometricEnabled(),
+        getBiometricLabel(),
+        areNotificationsEnabled(),
+      ]);
+      setBiometricAvailable(available);
+      setBiometricEnabled(enabled);
+      setBiometricLabel(label);
+      setNotificationsEnabledState(pushEnabled);
+    };
+    loadSecuritySettings().catch(() => {});
   }, []);
+
+  const toggleNotifications = async () => {
+    const nextEnabled = !notificationsEnabled;
+    await setNotificationsEnabled(nextEnabled);
+    setNotificationsEnabledState(nextEnabled);
+    if (nextEnabled) {
+      const token = await registerForPushNotificationsAsync();
+      if (!token) {
+        await setNotificationsEnabled(false);
+        setNotificationsEnabledState(false);
+        Alert.alert('Notifications unavailable', 'Push notifications were not enabled on this device.');
+      }
+    }
+  };
+
+  const toggleBiometric = async () => {
+    if (biometricEnabled) {
+      await disableBiometricAuth();
+      setBiometricEnabled(false);
+      return;
+    }
+
+    const unlocked = await authenticateWithBiometric();
+    if (!unlocked) return;
+    await enableBiometricAuth();
+    setBiometricEnabled(true);
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -63,6 +122,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           onPress: async () => {
             try {
               await AsyncStorage.multiRemove(['accessToken', 'user', 'userEmail', 'pending_logs']);
+              await clearAll();
               navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
             } catch (err: any) {
               Alert.alert('Sign out failed', err?.message || 'Unable to clear your local session. Please try again.');
@@ -109,17 +169,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <SettingItem
             icon={<Bell size={18} color={COLORS.ink} />}
             title="Notifications"
-            subtitle="Push notifications and alerts"
-            onPress={() => {}}
+            subtitle={notificationsEnabled ? 'Push notifications enabled' : 'Push notifications off'}
+            onPress={toggleNotifications}
+            showArrow={false}
+            rightElement={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={toggleNotifications}
+                trackColor={{ false: COLORS.border, true: COLORS.brandSubtle }}
+                thumbColor={notificationsEnabled ? COLORS.primary : COLORS.textSecondary}
+              />
+            }
             iconBg="rgba(245, 158, 11, 0.1)"
           />
-          <SettingItem
-            icon={<ShieldCheck size={18} color={COLORS.ink} />}
-            title="Privacy & Security"
-            subtitle="Manage your privacy settings"
-            onPress={() => {}}
-            iconBg="rgba(16, 185, 129, 0.1)"
-          />
+          {biometricAvailable && (
+            <SettingItem
+              icon={<ShieldCheck size={18} color={COLORS.ink} />}
+              title={biometricLabel}
+              subtitle={biometricEnabled ? 'Enabled for app unlock' : 'Use device biometrics to unlock'}
+              onPress={toggleBiometric}
+              showArrow={false}
+              rightElement={
+                <Switch
+                  value={biometricEnabled}
+                  onValueChange={toggleBiometric}
+                  trackColor={{ false: COLORS.border, true: COLORS.brandSubtle }}
+                  thumbColor={biometricEnabled ? COLORS.primary : COLORS.textSecondary}
+                />
+              }
+              iconBg="rgba(16, 185, 129, 0.1)"
+            />
+          )}
 
           {/* About Section */}
           <Text style={styles.sectionLabel}>ABOUT</Text>
