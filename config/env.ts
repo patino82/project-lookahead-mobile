@@ -3,7 +3,7 @@
  * Reads from Expo Constants for EAS config support.
  * For development, values come from expo-constants.
  */
-import * as Constants from 'expo-constants';
+import Constants from 'expo-constants';
 
 export const AppConfig = {
   appName: 'Project Lookahead',
@@ -25,5 +25,5 @@ export function getApiBaseUrl(): string {
 
 /** Returns true when running in development mode. */
 export function isDev(): boolean {
-  return Constants.executionEnvironment !== 'production';
+  return typeof __DEV__ !== 'undefined' ? __DEV__ : false;
 }

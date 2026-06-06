@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView, Platform } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, SafeAreaView, TextInput } from 'react-native';
+import { COLORS, SPACING } from '../constants';
 import { Card } from '../components/Card';
 import { Project } from '../types';
 import { amplitude } from '../config/amplitude';
 import { apiFetch } from '../services/api';
-import { LayoutGrid, ChevronRight, MapPin, CalendarDays, Activity } from 'lucide-react-native';
+import { LayoutGrid, ChevronRight, MapPin, CalendarDays, Activity, Search } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-interface ProjectListScreenProps {
-  navigation: any;
-}
+import type { ProjectListScreenProps } from '../navigation/types';
 
 export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation }) => {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +47,10 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
     setRefreshing(true);
     fetchProjects();
   };
+
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
 
   const renderItem = ({ item }: { item: Project }) => (
     <TouchableOpacity
@@ -110,6 +112,21 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
             <Text style={styles.avatarText}>DP</Text>
           </View>
         </View>
+
+        <View style={styles.searchArea}>
+          <View style={styles.searchBox}>
+            <Search size={16} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search missions by name"
+              placeholderTextColor={COLORS.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+        </View>
         
         {loading && !refreshing ? (
           <View style={styles.centered}>
@@ -117,7 +134,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
           </View>
         ) : (
           <FlatList
-            data={projects}
+            data={filteredProjects}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
@@ -128,8 +145,12 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <LayoutGrid size={48} color={COLORS.border} strokeWidth={1} />
-                <Text style={styles.emptyText}>Zero Active Missions</Text>
-                <Text style={styles.emptySub}>Deploy a project sequence in Notion to populate this field list.</Text>
+                <Text style={styles.emptyText}>{searchQuery.trim() ? 'No Matching Missions' : 'Zero Active Missions'}</Text>
+                <Text style={styles.emptySub}>
+                  {searchQuery.trim()
+                    ? 'Adjust the search query to find another project.'
+                    : 'Deploy a project sequence in Notion to populate this field list.'}
+                </Text>
               </View>
             }
           />
@@ -154,7 +175,7 @@ const styles = StyleSheet.create({
   },
   welcome: {
     fontSize: 10,
-    fontWeight: '950',
+    fontWeight: '900',
     color: COLORS.primary,
     letterSpacing: 2,
     marginBottom: 4,
@@ -174,9 +195,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    color: '#fff',
+    color: COLORS.textInverse,
     fontSize: 14,
     fontWeight: '900',
+  },
+  searchArea: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
+  searchBox: {
+    minHeight: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.soft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '700',
+    paddingVertical: 10,
   },
   centered: {
     flex: 1,
@@ -203,7 +246,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 16,
-    backgroundColor: 'rgba(224, 123, 53, 0.1)',
+    backgroundColor: COLORS.brandSubtle,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -228,11 +271,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginRight: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: COLORS.borderStrong,
   },
   statusText: {
     fontSize: 9,
-    fontWeight: '950',
+    fontWeight: '900',
     color: COLORS.textSecondary,
     letterSpacing: 1,
   },

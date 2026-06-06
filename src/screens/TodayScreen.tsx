@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   welcome: {
     fontSize: 10,
-    fontWeight: '950',
+    fontWeight: '900',
     color: COLORS.primary,
     letterSpacing: 2,
   },
@@ -210,8 +210,8 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontSize: 26,
-    fontWeight: '950',
-    color: '#fff',
+    fontWeight: '900',
+    color: COLORS.textInverse,
     letterSpacing: -0.5,
     marginBottom: 32,
   },
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
   },
   metricValue: {
     fontSize: 24,
-    fontWeight: '950',
-    color: '#fff',
+    fontWeight: '900',
+    color: COLORS.textInverse,
   },
   metricLabel: {
     fontSize: 8,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '950',
+    fontWeight: '900',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: '950',
+    fontWeight: '900',
     color: COLORS.ink,
     marginTop: 20,
     letterSpacing: 1,

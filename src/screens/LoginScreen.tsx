@@ -1,19 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ActivityIndicator, SafeAreaView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CustomButton } from '../components/CustomButton';
-import { COLORS, SPACING, RADIUS } from '../constants';
+import { COLORS, SPACING } from '../constants';
 import { amplitude } from '../config/amplitude';
 import { ENV } from '../config/env';
-import { Ionicons } from '@expo/vector-icons';
+import { Zap } from 'lucide-react-native';
+import type { LoginScreenProps } from '../navigation/types';
 
 WebBrowser.maybeCompleteAuthSession();
-
-interface LoginScreenProps {
-  navigation: any;
-}
 
 const discovery = {
   authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -101,7 +98,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <View style={styles.logo}>
-            <Ionicons name="flash" size={40} color="#fff" />
+            <Zap size={40} color={COLORS.textInverse} fill={COLORS.textInverse} />
           </View>
           <Text style={styles.brandName}>PROJECT LOOKAHEAD</Text>
           <Text style={styles.tagline}>KINETIC FIELD COMMAND</Text>
@@ -127,7 +124,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827', // Deep Navy
+    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
@@ -156,13 +153,13 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 26,
     fontWeight: '900',
-    color: '#fff',
+    color: COLORS.text,
     letterSpacing: 1,
   },
   tagline: {
     fontSize: 10,
     fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: COLORS.textFaint,
     letterSpacing: 4,
     marginTop: 8,
   },
@@ -174,25 +171,25 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#fff',
+    color: COLORS.text,
     marginBottom: 10,
   },
   instruction: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 40,
     lineHeight: 20,
   },
   loginButton: {
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.text,
   },
   footerNote: {
     marginTop: 40,
     fontSize: 10,
     fontWeight: '800',
-    color: 'rgba(255, 255, 255, 0.2)',
+    color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
   }

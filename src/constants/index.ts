@@ -7,17 +7,26 @@ export const COLORS = {
   ink: '#e6e9ec',       // Cyber White
   text: '#e6e9ec',
   textSecondary: '#7a8199', // Muted Blue/Gray
+  textMuted: 'rgba(255, 255, 255, 0.2)',
+  textFaint: 'rgba(255, 255, 255, 0.4)',
+  textInverse: '#ffffff',
+  muted: '#7a8199',
   error: '#ef4444',
   success: '#10b981',   // Emerald
   warning: '#f59e0b',   // Amber
+  orange: '#e07b35',
+  amber: '#f59e0b',
+  rose: '#ef4444',
   border: 'rgba(255, 255, 255, 0.08)', 
+  borderStrong: 'rgba(255, 255, 255, 0.1)',
   soft: '#11151c',
   brand: '#e07b35',
+  brandSubtle: 'rgba(224, 123, 53, 0.1)',
   
   // High-Fidelity Gradients
-  heroGradient: ['#0b0e12', '#0f1319'],
-  brandGradient: ['#e07b35', '#f0944f'],
-  glassGradient: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)'],
+  heroGradient: ['#0b0e12', '#0f1319'] as const,
+  brandGradient: ['#e07b35', '#f0944f'] as const,
+  glassGradient: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)'] as const,
 };
 
 export const SPACING = {

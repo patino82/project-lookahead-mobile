@@ -2,9 +2,11 @@ import React, { useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { AlertCircle, Calendar, FileText, LayoutGrid, Zap } from 'lucide-react-native';
 import { COLORS } from '../constants';
 import { amplitude } from '../config/amplitude';
+import { navigationRef } from './RootNavigation';
+import type { MainTabsScreenProps, MainTabParamList, RootStackParamList } from './types';
 
 import { LoginScreen } from '../screens/LoginScreen';
 import { ProjectListScreen } from '../screens/ProjectListScreen';
@@ -15,11 +17,13 @@ import { OpenItemsScreen } from '../screens/OpenItemsScreen';
 import { DocumentsScreen } from '../screens/DocumentsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-function MainTabs({ route }: any) {
-  const { projectId } = route.params || {};
+function MainTabs({ route }: MainTabsScreenProps) {
+  const projectId = route.params?.params && 'projectId' in route.params.params
+    ? route.params.params.projectId
+    : undefined;
 
   return (
     <Tab.Navigator
@@ -28,7 +32,7 @@ function MainTabs({ route }: any) {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#111827', // Matching Cyber Dark theme
+          backgroundColor: COLORS.background,
           borderTopWidth: 1,
           borderTopColor: 'rgba(255,255,255,0.05)',
           height: 65,
@@ -37,26 +41,25 @@ function MainTabs({ route }: any) {
         },
         tabBarLabelStyle: {
           fontSize: 9,
-          fontWeight: '950',
+          fontWeight: '900',
           textTransform: 'uppercase',
           letterSpacing: 1,
         },
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: any;
-
           if (route.name === 'Today') {
-            iconName = focused ? 'flash' : 'flash-outline';
-          } else if (route.name === 'Logs') {
-            iconName = focused ? 'document-text' : 'document-text-outline';
-          } else if (route.name === 'Open Items') {
-            iconName = focused ? 'alert-circle' : 'alert-circle-outline';
-          } else if (route.name === 'Projects') {
-            iconName = focused ? 'apps' : 'apps-outline';
-          } else if (route.name === 'Schedule') {
-            iconName = focused ? 'calendar' : 'calendar-outline';
+            return <Zap size={size} color={color} fill={focused ? color : 'transparent'} />;
+          }
+          if (route.name === 'Logs') {
+            return <FileText size={size} color={color} fill={focused ? color : 'transparent'} />;
+          }
+          if (route.name === 'Open Items') {
+            return <AlertCircle size={size} color={color} fill={focused ? color : 'transparent'} />;
+          }
+          if (route.name === 'Schedule') {
+            return <Calendar size={size} color={color} fill={focused ? color : 'transparent'} />;
           }
 
-          return <Ionicons name={iconName} size={22} color={color} />;
+          return <LayoutGrid size={size} color={color} fill={focused ? color : 'transparent'} />;
         },
       })}
     >
@@ -98,6 +101,7 @@ export default function AppNavigation() {
 
   return (
     <NavigationContainer
+      ref={navigationRef}
       onStateChange={(state) => {
         const current = state?.routes[state.index]?.name;
         if (current && current !== previousScreen.current) {
