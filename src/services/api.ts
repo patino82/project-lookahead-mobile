@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { ENV } from '../config/env';
 import { resetToLogin } from '../navigation/RootNavigation';
 import {
@@ -20,6 +20,26 @@ import {
 
 const API_BASE = ENV.API_BASE;
 
+// Keys stored in SecureStore (sensitive token data)
+const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+async function getSecureToken(key: string): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch {
+    return null;
+  }
+}
+
+async function setSecureToken(key: string, value: string): Promise<void> {
+  await SecureStore.setItemAsync(key, value);
+}
+
+async function removeSecureToken(key: string): Promise<void> {
+  await SecureStore.deleteItemAsync(key);
+}
+
 type ApiFetchOptions = RequestInit & {
   skipAuthRetry?: boolean;
 };
@@ -33,8 +53,8 @@ async function buildHeaders(opts: RequestInit) {
   const headers = new Headers(opts.headers || {});
   headers.set('Content-Type', headers.get('Content-Type') || 'application/json');
 
-  // Prefer cookie-based sessions; for APIs that require bearer tokens, include accessToken from storage.
-  const token = await AsyncStorage.getItem('accessToken');
+  // Prefer cookie-based sessions; for APIs that require bearer tokens, include accessToken from secure storage.
+  const token = await getSecureToken(ACCESS_TOKEN_KEY);
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
@@ -147,17 +167,20 @@ async function replayQueuedRequests() {
 }
 
 async function trySilentRefresh() {
-  const refreshToken = await AsyncStorage.getItem('refreshToken');
+  const refreshToken = await getSecureToken(REFRESH_TOKEN_KEY);
   if (!refreshToken) return false;
 
   // The current backend exposes cookie-based sessions, not a mobile refresh endpoint.
   // If a future login stores refreshToken, this retry lets a valid cookie session rehydrate the request.
-  await AsyncStorage.removeItem('accessToken');
+  await removeSecureToken(ACCESS_TOKEN_KEY);
   return true;
 }
 
 async function handleAuthExpired() {
-  await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
+  await Promise.all([
+    removeSecureToken(ACCESS_TOKEN_KEY),
+    removeSecureToken(REFRESH_TOKEN_KEY),
+  ]);
   resetToLogin();
 }
 

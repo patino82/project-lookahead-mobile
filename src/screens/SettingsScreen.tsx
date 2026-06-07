@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, ScrollView, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 import { LogOut, User, Bell, ShieldCheck, ChevronRight, Zap } from 'lucide-react-native';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../constants';
@@ -127,7 +128,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['accessToken', 'user', 'userEmail', 'pending_logs']);
+              await SecureStore.deleteItemAsync('accessToken');
+              await AsyncStorage.multiRemove(['user', 'userEmail', 'pending_logs']);
               await clearAll();
               navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
             } catch (err: any) {

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { CustomButton } from '../components/CustomButton';
 import { COLORS, SPACING } from '../constants';
 import { amplitude } from '../config/amplitude';
@@ -36,7 +36,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   }, []);
 
   const checkExistingSession = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await SecureStore.getItemAsync('accessToken');
     if (token) {
       const biometricEnabled = await isBiometricEnabled();
       if (biometricEnabled) {
@@ -102,7 +102,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
       const data = await res.json();
       if (data.ok && data.token) {
-        await AsyncStorage.setItem('accessToken', data.token);
+        await SecureStore.setItemAsync('accessToken', data.token);
         amplitude.track('User Logged In', { source: 'google_oauth', is_new_user: false });
         const [biometricAvailable, biometricEnabled] = await Promise.all([
           isBiometricAvailable(),

@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import React, { useEffect } from 'react';
 import AppNavigation from './src/navigation/AppNavigation';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
@@ -10,7 +10,7 @@ export default function App() {
     initDB().catch(error => console.error('Failed to initialize offline database', error));
 
     const cleanupNotifications = setupNotificationListeners();
-    AsyncStorage.getItem('accessToken')
+    SecureStore.getItemAsync('accessToken')
       .then(token => {
         if (token) return registerForPushNotificationsAsync();
         return null;
