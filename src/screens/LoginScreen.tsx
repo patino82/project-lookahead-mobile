@@ -26,7 +26,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   const redirectUri = AuthSession.makeRedirectUri({
     path: '/',
-    preferLocalhost: true,
+    preferLocalhost: false,
   });
 
   useEffect(() => {
