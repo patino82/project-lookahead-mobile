@@ -1,32 +1,55 @@
-const open = require('open');
-const { execSync } = require('child_process');
+#!/usr/bin/env node
 
-// Minimal smoke script instructions. This script will print the redirect URI
-// and open the Expo dev tools in the default browser. The developer must
-// manually complete the Google consent in the emulator/device when prompted.
+const DEFAULT_API_BASE = 'https://project-report-web.vercel.app';
 
-(async function main(){
-  try {
-    // Print instructions and the redirect URI used by expo-auth-session with proxy
-    console.log('\nMobile auth smoke test (manual step required)');
-    console.log('1) Start the Expo dev server (expo start) in another terminal if not running.');
-    console.log('2) Launch the app in emulator or Expo Go.');
-    console.log('3) The app uses AuthSession.makeRedirectUri({useProxy:true}).');
-    console.log('   When you tap Continue with Google, the Expo proxy will open a browser for Google consent.');
-    console.log('4) Complete the Google consent in the browser/emulator.');
-    console.log('\nTo help, this script will attempt to open the Expo devtools in your default browser.');
+const args = process.argv.slice(2);
+const getArg = (name) => {
+  const prefix = `--${name}=`;
+  const inline = args.find((arg) => arg.startsWith(prefix));
+  if (inline) return inline.slice(prefix.length);
+  const index = args.indexOf(`--${name}`);
+  return index >= 0 ? args[index + 1] : undefined;
+};
 
-    try {
-      execSync('open "http://localhost:19002"', { stdio: 'ignore' });
-    } catch (e) {
-      // ignore
-    }
+const apiBase = getArg('api-base') || process.env.API_BASE || DEFAULT_API_BASE;
+const idToken = getArg('id-token') || process.env.GOOGLE_ID_TOKEN;
+const code = getArg('code') || process.env.GOOGLE_AUTH_CODE;
+const redirectUri = getArg('redirect-uri') || process.env.GOOGLE_REDIRECT_URI || 'http://localhost:8081/';
 
-    console.log('\nWhen the Google consent flow completes, verify the backend at /api/auth/exchange returns a cookie or JSON with accessToken.');
-    console.log('Check AsyncStorage keys: accessToken and sessionType to determine which flow was used.');
-    console.log('\nScript complete. Follow the manual steps above to finish the auth flow.');
-  } catch (err) {
-    console.error(err);
+async function main() {
+  if (!idToken && !code) {
+    console.error('Missing credentials. Provide GOOGLE_ID_TOKEN or GOOGLE_AUTH_CODE.');
+    console.error('Examples:');
+    console.error('  GOOGLE_ID_TOKEN="<token>" npm run smoke:auth');
+    console.error('  GOOGLE_AUTH_CODE="<code>" GOOGLE_REDIRECT_URI="http://localhost:8081/" npm run smoke:auth');
     process.exit(1);
   }
-})();
+
+  const body = idToken
+    ? { id_token: idToken }
+    : { code, redirect_uri: redirectUri };
+
+  const endpoint = `${apiBase.replace(/\/$/, '')}/api/auth/exchange`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.ok || !payload.token) {
+    console.error(`Auth exchange failed: HTTP ${response.status}`);
+    console.error(JSON.stringify(payload, null, 2));
+    process.exit(1);
+  }
+
+  console.log('Auth exchange passed.');
+  console.log(`Endpoint: ${endpoint}`);
+  console.log(`Mode: ${idToken ? 'id_token' : 'authorization_code'}`);
+  console.log(`Expires in: ${payload.expiresIn || 'unknown'} seconds`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

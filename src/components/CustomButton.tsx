@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, TouchableOpacityProps } from 'react-native';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
 import { LinearGradient } from 'expo-linear-gradient';
 
-interface CustomButtonProps {
+interface CustomButtonProps extends Pick<TouchableOpacityProps, 'accessibilityLabel' | 'accessibilityHint'> {
   title: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -20,7 +20,9 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   style,
   textStyle,
   disabled = false,
-  size = 'md'
+  size = 'md',
+  accessibilityLabel,
+  accessibilityHint,
 }) => {
   const isGradient = variant === 'primary' || variant === 'secondary';
   const gradientColors = variant === 'primary' ? COLORS.brandGradient : COLORS.heroGradient;
@@ -37,6 +39,9 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
       activeOpacity={0.8}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
       style={[
         styles.touchable,
         size === 'sm' && styles.sizeSm,
@@ -87,14 +92,14 @@ const styles = StyleSheet.create({
     // Handled by gradient
   },
   primaryText: {
-    color: '#FFF',
+    color: COLORS.textInverse,
     fontWeight: '800',
   },
   secondary: {
     // Handled by gradient
   },
   secondaryText: {
-    color: '#FFF',
+    color: COLORS.textInverse,
     fontWeight: '800',
   },
   outline: {
@@ -117,7 +122,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.error,
   },
   dangerText: {
-    color: '#FFF',
+    color: COLORS.textInverse,
     fontWeight: '700',
   },
   buttonText: {
@@ -131,6 +136,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   disabledText: {
-    color: 'rgba(255,255,255,0.6)',
+    color: COLORS.textDisabled,
   }
 });

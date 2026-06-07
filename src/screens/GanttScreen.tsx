@@ -204,14 +204,29 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
           </View>
           <BarChart3 size={24} color={COLORS.primary} />
         </View>
-        {error && <TouchableOpacity style={styles.errorBanner} onPress={fetchChart}><Text style={styles.errorText}>{error} Tap to retry.</Text></TouchableOpacity>}
+        {error && (
+          <TouchableOpacity
+            style={styles.errorBanner}
+            onPress={fetchChart}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading Gantt chart"
+          >
+            <Text style={styles.errorText}>{error} Tap to retry.</Text>
+          </TouchableOpacity>
+        )}
         <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchChart(); }} tintColor={COLORS.primary} />}>
           <View style={styles.chart}>
             <View style={styles.leftPanel}>
               <View style={styles.leftHeader}><Text style={styles.headerText}>TASK / PHASE</Text></View>
               {rows.length === 0 && <Text style={styles.empty}>No tasks</Text>}
               {rows.map(row => row.kind === 'phase' ? (
-                <TouchableOpacity key={row.id} style={styles.leftPhaseRow} onPress={() => setCollapsedPhases(current => ({ ...current, [row.phase]: !current[row.phase] }))}>
+                <TouchableOpacity
+                  key={row.id}
+                  style={styles.leftPhaseRow}
+                  onPress={() => setCollapsedPhases(current => ({ ...current, [row.phase]: !current[row.phase] }))}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${collapsedPhases[row.phase] ? 'Expand' : 'Collapse'} phase ${row.phase}`}
+                >
                   <ChevronDown size={15} color={COLORS.primary} style={collapsedPhases[row.phase] ? styles.collapsedChevron : undefined} />
                   <Text style={styles.phaseText}>{row.phase.toUpperCase()}</Text>
                   <Text style={styles.phaseCount}>{row.count}</Text>
@@ -247,6 +262,8 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
                       <TouchableOpacity
                         style={[styles.bar, { left, width: duration * CELL_WIDTH - 6, backgroundColor: statusColor(statusFor(row.task.taskId).status) }]}
                         onPress={() => setSelectedTask(row.task)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit Gantt task ${row.task.taskName}`}
                       >
                         <Text style={styles.barText}>{duration}D</Text>
                       </TouchableOpacity>
@@ -261,7 +278,14 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
       <Modal visible={Boolean(selectedTask)} transparent animationType="fade" onRequestClose={() => setSelectedTask(null)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <TouchableOpacity style={styles.closeButton} onPress={() => setSelectedTask(null)}><X size={18} color={COLORS.textSecondary} /></TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedTask(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Close task status dialog"
+            >
+              <X size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>{selectedTask?.taskName}</Text>
             <Text style={styles.modalMeta}>{selectedTask?.phase || 'Unassigned'} · {selectedTask?.durationDays || 1} days</Text>
             <Text style={styles.modalLabel}>CHANGE STATUS</Text>
@@ -269,7 +293,13 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
               {selectedTask && STATUSES.map(option => {
                 const selected = statusFor(selectedTask.taskId).status === option.value;
                 return (
-                  <TouchableOpacity key={option.value} style={[styles.statusButton, selected && { borderColor: statusColor(option.value), backgroundColor: `${statusColor(option.value)}18` }]} onPress={() => updateStatus(selectedTask, option.value)}>
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.statusButton, selected && { borderColor: statusColor(option.value), backgroundColor: `${statusColor(option.value)}18` }]}
+                    onPress={() => updateStatus(selectedTask, option.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set task status ${option.label}`}
+                  >
                     <Text style={[styles.statusText, selected && { color: statusColor(option.value) }]}>{option.label}</Text>
                   </TouchableOpacity>
                 );
@@ -289,7 +319,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
   title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
-  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: 'rgba(239,68,68,0.1)' },
+  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
   chart: { flexDirection: 'row' },
   leftPanel: { width: LEFT_WIDTH },
@@ -300,8 +330,8 @@ const styles = StyleSheet.create({
   dayName: { color: COLORS.textSecondary, fontSize: 9, fontWeight: '800' },
   dayNumber: { color: COLORS.ink, fontSize: 12, fontWeight: '900' },
   empty: { width: LEFT_WIDTH, padding: SPACING.md, color: COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
-  leftPhaseRow: { height: PHASE_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: SPACING.sm, backgroundColor: '#10151c', borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  timelinePhaseRow: { height: PHASE_HEIGHT, backgroundColor: '#10151c', borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  leftPhaseRow: { height: PHASE_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: SPACING.sm, backgroundColor: COLORS.phaseSurface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  timelinePhaseRow: { height: PHASE_HEIGHT, backgroundColor: COLORS.phaseSurface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   collapsedChevron: { transform: [{ rotate: '-90deg' }] },
   phaseText: { flex: 1, color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   phaseCount: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '800' },
@@ -312,7 +342,7 @@ const styles = StyleSheet.create({
   gridCell: { width: CELL_WIDTH, borderLeftWidth: 1, borderLeftColor: COLORS.border },
   bar: { position: 'absolute', top: 12, height: 28, justifyContent: 'center', paddingHorizontal: 6, borderRadius: 7 },
   barText: { color: COLORS.background, fontSize: 9, fontWeight: '900' },
-  modalBackdrop: { flex: 1, justifyContent: 'center', padding: SPACING.lg, backgroundColor: 'rgba(0,0,0,0.72)' },
+  modalBackdrop: { flex: 1, justifyContent: 'center', padding: SPACING.lg, backgroundColor: COLORS.modalScrim },
   modalCard: { padding: SPACING.lg, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   closeButton: { alignSelf: 'flex-end', padding: SPACING.xs },
   modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900' },

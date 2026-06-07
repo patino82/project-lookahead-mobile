@@ -34,8 +34,14 @@ interface SettingItemProps {
 }
 
 const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPress, showArrow = true, iconBg, rightElement }) => (
-  <TouchableOpacity style={styles.settingRow} onPress={onPress} activeOpacity={0.7}>
-    <View style={[styles.settingIcon, { backgroundColor: iconBg || 'rgba(255,255,255,0.06)' }]}>
+  <TouchableOpacity
+    style={styles.settingRow}
+    onPress={onPress}
+    activeOpacity={0.7}
+    accessibilityRole="button"
+    accessibilityLabel={title}
+  >
+    <View style={[styles.settingIcon, { backgroundColor: iconBg || COLORS.glass }]}>
       {icon}
     </View>
     <View style={styles.settingContent}>
@@ -148,7 +154,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           {/* Profile Card */}
           <View style={styles.profileCard}>
             <View style={styles.profileIcon}>
-              <Zap size={32} color="#fff" />
+              <Zap size={32} color={COLORS.textInverse} />
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>Project Lookahead</Text>
@@ -164,7 +170,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             title="Account"
             subtitle={email}
             onPress={() => {}}
-            iconBg="rgba(224, 123, 53, 0.1)"
+            iconBg={COLORS.brandSubtle}
           />
           <SettingItem
             icon={<Bell size={18} color={COLORS.ink} />}
@@ -178,9 +184,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 onValueChange={toggleNotifications}
                 trackColor={{ false: COLORS.border, true: COLORS.brandSubtle }}
                 thumbColor={notificationsEnabled ? COLORS.primary : COLORS.textSecondary}
+                accessibilityLabel="Toggle notifications"
               />
             }
-            iconBg="rgba(245, 158, 11, 0.1)"
+            iconBg={COLORS.warningSubtle}
           />
           {biometricAvailable && (
             <SettingItem
@@ -195,9 +202,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                   onValueChange={toggleBiometric}
                   trackColor={{ false: COLORS.border, true: COLORS.brandSubtle }}
                   thumbColor={biometricEnabled ? COLORS.primary : COLORS.textSecondary}
+                  accessibilityLabel={`Toggle ${biometricLabel}`}
                 />
               }
-              iconBg="rgba(16, 185, 129, 0.1)"
+              iconBg={COLORS.glass}
             />
           )}
 
@@ -210,11 +218,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             subtitle={appVersion}
             onPress={() => {}}
             showArrow={false}
-            iconBg="rgba(224, 123, 53, 0.1)"
+            iconBg={COLORS.brandSubtle}
           />
 
           {/* Sign Out */}
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+          >
             <LogOut size={18} color={COLORS.error} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -335,9 +349,9 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: 14,
     borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: COLORS.errorSubtle,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: COLORS.errorBorder,
     marginTop: SPACING.lg,
     minHeight: 48,
   },

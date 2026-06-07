@@ -62,7 +62,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
     return (
       <View style={styles.container}>
         <LinearGradient
-          colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
+          colors={COLORS.heroOverlay}
           style={StyleSheet.absoluteFill}
         />
         <SafeAreaView style={{ flex: 1 }}>
@@ -131,6 +131,16 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
               <Text style={styles.offlineText}>OFFLINE MODE - CACHED DASHBOARD</Text>
             </View>
           )}
+          {error && (
+            <TouchableOpacity
+              style={styles.errorBanner}
+              onPress={fetchDashboard}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading dashboard"
+            >
+              <Text style={styles.errorText}>{error} Tap to retry.</Text>
+            </TouchableOpacity>
+          )}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>High Priority Actions</Text>
             <Zap size={14} color={COLORS.primary} />
@@ -138,7 +148,12 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
 
           {data?.callNowDetails.length > 0 ? (
             data.callNowDetails.map((task: any) => (
-              <TouchableOpacity key={task.taskId} activeOpacity={0.8}>
+              <TouchableOpacity
+                key={task.taskId}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`High priority action ${task.taskName}`}
+              >
                 <Card variant="elevated" style={styles.actionCard}>
                   <View style={styles.actionCardInner}>
                     <View style={styles.actionIconBox}>
@@ -210,14 +225,14 @@ const styles = StyleSheet.create({
     ...SHADOWS.deep,
   },
   dateChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: COLORS.border,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.full,
     alignSelf: 'flex-start',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: COLORS.borderStrong,
   },
   dateChipText: {
     fontSize: 9,
@@ -256,7 +271,7 @@ const styles = StyleSheet.create({
   metricDivider: {
     width: 1,
     height: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: COLORS.border,
   },
   content: {
     paddingHorizontal: SPACING.md,
@@ -269,9 +284,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    backgroundColor: COLORS.warningSubtle,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.24)',
+    borderColor: COLORS.warningBorder,
   },
   offlineText: {
     color: COLORS.warning,
@@ -307,7 +322,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(224, 123, 53, 0.1)',
+    backgroundColor: COLORS.brandSubtle,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
@@ -386,10 +401,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: COLORS.error,
-    textAlign: 'center',
-    margin: SPACING.md,
     fontWeight: '900',
     fontSize: 11,
     textTransform: 'uppercase',
+  },
+  errorBanner: {
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.errorSubtle,
+    borderWidth: 1,
+    borderColor: COLORS.errorBorder,
   },
 });

@@ -72,6 +72,8 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
     <TouchableOpacity
       activeOpacity={0.8}
       style={styles.itemContainer}
+      accessibilityRole="button"
+      accessibilityLabel={`Open project ${item.name}`}
       onPress={() => {
         amplitude.track('Project Selected', {
           project_id: item.id,
@@ -115,7 +117,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['rgba(224, 123, 53, 0.05)', 'transparent']}
+        colors={COLORS.heroOverlay}
         style={StyleSheet.absoluteFill}
       />
       <SafeAreaView style={{ flex: 1 }}>
@@ -141,6 +143,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
               style={styles.searchInput}
               placeholder="Search missions by name"
               placeholderTextColor={COLORS.textSecondary}
+              accessibilityLabel="Search projects"
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -230,9 +233,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    backgroundColor: COLORS.warningSubtle,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.24)',
+    borderColor: COLORS.warningBorder,
   },
   offlineText: {
     color: COLORS.warning,

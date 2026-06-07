@@ -50,7 +50,7 @@ const COLUMNS: Array<{ value: TaskStatusValue; label: string; color: string }> =
   { value: 'blocked', label: 'BLOCKED', color: COLORS.rose },
 ];
 
-const PHASE_COLORS = [COLORS.primary, COLORS.success, COLORS.amber, COLORS.rose, '#60a5fa', '#a78bfa'];
+const PHASE_COLORS = [COLORS.primary, COLORS.success, COLORS.amber, COLORS.rose, COLORS.info, COLORS.accentPurple];
 
 const unwrap = (value: any, key: string) => value?.[key] || value || [];
 
@@ -145,7 +145,12 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
           <LayoutGrid size={24} color={COLORS.primary} />
         </View>
         {error && (
-          <TouchableOpacity style={styles.errorBanner} onPress={fetchBoard}>
+          <TouchableOpacity
+            style={styles.errorBanner}
+            onPress={fetchBoard}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading Kanban board"
+          >
             <Text style={styles.errorText}>{error} Tap to retry.</Text>
           </TouchableOpacity>
         )}
@@ -171,6 +176,8 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
                         style={[styles.card, { borderLeftColor: phaseColors[task.phase || 'Unassigned'] }]}
                         activeOpacity={0.78}
                         onPress={() => setSelectedTaskId(selected ? null : task.taskId)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${selected ? 'Hide' : 'Show'} actions for ${task.taskName}`}
                       >
                         <View style={styles.cardTop}>
                           <Text style={styles.taskName}>{task.taskName}</Text>
@@ -187,7 +194,13 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
                         {selected && (
                           <View style={styles.actions}>
                             {COLUMNS.filter(option => option.value !== taskStatus.status).map(option => (
-                              <TouchableOpacity key={option.value} style={styles.actionButton} onPress={() => moveTask(task, option.value)}>
+                              <TouchableOpacity
+                                key={option.value}
+                                style={styles.actionButton}
+                                onPress={() => moveTask(task, option.value)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Move ${task.taskName} to ${option.label}`}
+                              >
                                 <Text style={[styles.actionText, { color: option.color }]}>{option.label}</Text>
                               </TouchableOpacity>
                             ))}
@@ -213,7 +226,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
   title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
-  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: 'rgba(239,68,68,0.1)' },
+  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
   board: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.lg, gap: SPACING.md },
   column: { width: 284, padding: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: COLORS.soft, borderWidth: 1, borderColor: COLORS.border },

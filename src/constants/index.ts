@@ -11,21 +11,32 @@ export const COLORS = {
   textSecondary: '#7a8199', // Muted Blue/Gray
   textMuted: 'rgba(255, 255, 255, 0.2)',
   textFaint: 'rgba(255, 255, 255, 0.4)',
+  textDisabled: 'rgba(255, 255, 255, 0.6)',
   textInverse: '#ffffff',
   muted: '#7a8199',
   error: '#ef4444',
   success: '#10b981',   // Emerald
   warning: '#f59e0b',   // Amber
+  info: '#60a5fa',
+  accentPurple: '#a78bfa',
   orange: '#e07b35',
   amber: '#f59e0b',
   rose: '#ef4444',
   border: 'rgba(255, 255, 255, 0.08)', 
   borderStrong: 'rgba(255, 255, 255, 0.1)',
   soft: '#11151c',
+  phaseSurface: '#10151c',
   brand: '#e07b35',
   brandSubtle: 'rgba(224, 123, 53, 0.1)',
+  brandBorder: 'rgba(224, 123, 53, 0.2)',
+  warningSubtle: 'rgba(245, 158, 11, 0.12)',
+  warningBorder: 'rgba(245, 158, 11, 0.24)',
+  errorSubtle: 'rgba(239, 68, 68, 0.1)',
+  errorBorder: 'rgba(239, 68, 68, 0.2)',
+  modalScrim: 'rgba(0, 0, 0, 0.72)',
   
   // High-Fidelity Gradients
+  heroOverlay: ['rgba(224, 123, 53, 0.05)', 'transparent'] as const,
   heroGradient: ['#0b0e12', '#0f1319'] as const,
   brandGradient: ['#e07b35', '#f0944f'] as const,
   glassGradient: ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)'] as const,

@@ -185,8 +185,19 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
     const closed = item.status === 'closed';
     const due = dueStatus(item.dueDate, closed);
     return (
-      <TouchableOpacity style={[styles.card, closed && styles.cardClosed]} onPress={() => openForm(item)} activeOpacity={0.8}>
-        <TouchableOpacity style={styles.statusButton} onPress={() => toggleStatus(item)}>
+      <TouchableOpacity
+        style={[styles.card, closed && styles.cardClosed]}
+        onPress={() => openForm(item)}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit open item ${item.description}`}
+      >
+        <TouchableOpacity
+          style={styles.statusButton}
+          onPress={() => toggleStatus(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`${closed ? 'Reopen' : 'Close'} open item ${item.description}`}
+        >
           {closed ? <CheckCircle size={21} color={COLORS.success} /> : <Circle size={21} color={COLORS.textSecondary} />}
         </TouchableOpacity>
         <View style={styles.cardContent}>
@@ -204,7 +215,12 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.deleteButton} onPress={() => deleteItem(item)}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => deleteItem(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete open item ${item.description}`}
+        >
           <Trash2 size={17} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </TouchableOpacity>
@@ -221,7 +237,16 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
           </View>
           <Text style={styles.count}>{items.filter(item => item.status === 'open').length} OPEN</Text>
         </View>
-        {error && <TouchableOpacity style={styles.errorBanner} onPress={fetchItems}><Text style={styles.errorText}>{error} Tap to retry.</Text></TouchableOpacity>}
+        {error && (
+          <TouchableOpacity
+            style={styles.errorBanner}
+            onPress={fetchItems}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading open items"
+          >
+            <Text style={styles.errorText}>{error} Tap to retry.</Text>
+          </TouchableOpacity>
+        )}
         {isOffline && (
           <View style={styles.offlineBadge}>
             <Text style={styles.offlineText}>OFFLINE MODE - CACHED ITEMS</Text>
@@ -245,7 +270,15 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
             }
           />
         )}
-        <TouchableOpacity style={styles.fab} onPress={() => openForm()} activeOpacity={0.85}><Plus size={28} color={COLORS.background} /></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => openForm()}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Add open item"
+        >
+          <Plus size={28} color={COLORS.background} />
+        </TouchableOpacity>
       </SafeAreaView>
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={closeForm}>
         <View style={styles.modalBackdrop}>
@@ -260,17 +293,29 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
               autoFocus
               placeholder="What needs attention?"
               placeholderTextColor={COLORS.textSecondary}
+              accessibilityLabel="Open item description"
             />
             <Text style={styles.label}>PRIORITY</Text>
             <View style={styles.priorityOptions}>
               {PRIORITIES.map(value => (
-                <TouchableOpacity key={value} style={[styles.priorityOption, priority === value && { borderColor: priorityColor(value), backgroundColor: `${priorityColor(value)}18` }]} onPress={() => setPriority(value)}>
+                <TouchableOpacity
+                  key={value}
+                  style={[styles.priorityOption, priority === value && { borderColor: priorityColor(value), backgroundColor: `${priorityColor(value)}18` }]}
+                  onPress={() => setPriority(value)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set priority ${value}`}
+                >
                   <Text style={[styles.priorityOptionText, priority === value && { color: priorityColor(value) }]}>{value}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <Text style={styles.label}>DUE DATE</Text>
-            <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Choose open item due date"
+            >
               <Calendar size={17} color={COLORS.primary} />
               <Text style={styles.dateText}>{dueDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
             </TouchableOpacity>
@@ -286,8 +331,8 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
               />
             )}
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={closeForm}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveItem} disabled={saving}>
+              <TouchableOpacity style={styles.cancelButton} onPress={closeForm} accessibilityRole="button" accessibilityLabel="Cancel open item"><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={saveItem} disabled={saving} accessibilityRole="button" accessibilityLabel="Save open item">
                 {saving ? <ActivityIndicator size="small" color={COLORS.background} /> : <Text style={styles.saveText}>Save Item</Text>}
               </TouchableOpacity>
             </View>
@@ -305,10 +350,10 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
   title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
-  count: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(224,123,53,0.1)' },
-  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: 'rgba(239,68,68,0.1)' },
+  count: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: COLORS.brandSubtle },
+  errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
-  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: 'rgba(245, 158, 11, 0.12)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.24)' },
+  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: COLORS.warningSubtle, borderWidth: 1, borderColor: COLORS.warningBorder },
   offlineText: { color: COLORS.warning, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   list: { paddingHorizontal: SPACING.lg, paddingBottom: 104 },
   emptyList: { flexGrow: 1 },
@@ -328,7 +373,7 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
   emptyTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', marginTop: SPACING.md },
   emptySub: { color: COLORS.textSecondary, fontSize: FONT_SIZE.md, textAlign: 'center', marginTop: SPACING.xs },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.72)' },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: COLORS.modalScrim },
   modalCard: { padding: SPACING.lg, paddingBottom: SPACING.xl, borderTopLeftRadius: RADIUS.lg, borderTopRightRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceSolid },
   modalTitle: { color: COLORS.ink, fontSize: 20, fontWeight: '900', marginBottom: SPACING.lg },
   label: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1, marginBottom: SPACING.sm, marginTop: SPACING.md },

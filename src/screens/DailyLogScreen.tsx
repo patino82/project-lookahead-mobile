@@ -278,7 +278,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
             <Text style={styles.greeting}>JOURNAL</Text>
             <Text style={styles.title}>Daily Logs</Text>
           </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => setShowAddModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add daily log"
+          >
             <PlusCircle size={24} color={COLORS.primary} />
           </TouchableOpacity>
         </View>
@@ -297,7 +302,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
         )}
 
         {error && (
-          <TouchableOpacity style={styles.errorBanner} onPress={fetchLogs}>
+          <TouchableOpacity
+            style={styles.errorBanner}
+            onPress={fetchLogs}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading daily logs"
+          >
             <Text style={styles.errorText}>{error}</Text>
           </TouchableOpacity>
         )}
@@ -333,7 +343,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
                 <Text style={styles.greeting}>FIELD REPORT</Text>
                 <Text style={styles.modalTitle}>New Daily Log</Text>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={resetForm}>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={resetForm}
+                accessibilityRole="button"
+                accessibilityLabel="Close daily log form"
+              >
                 <X size={22} color={COLORS.ink} />
               </TouchableOpacity>
             </View>
@@ -347,11 +362,21 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
 
               <Text style={styles.fieldLabel}>Photos</Text>
               <View style={styles.photoActions}>
-                <TouchableOpacity style={styles.photoAction} onPress={handleCamera}>
+                <TouchableOpacity
+                  style={styles.photoAction}
+                  onPress={handleCamera}
+                  accessibilityRole="button"
+                  accessibilityLabel="Take daily log photo"
+                >
                   <Camera size={18} color={COLORS.primary} />
                   <Text style={styles.photoActionText}>Camera</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.photoAction} onPress={handleGallery}>
+                <TouchableOpacity
+                  style={styles.photoAction}
+                  onPress={handleGallery}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose daily log photos from gallery"
+                >
                   <ImagePlus size={18} color={COLORS.primary} />
                   <Text style={styles.photoActionText}>Gallery</Text>
                 </TouchableOpacity>
@@ -360,7 +385,12 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
                 {entry.photos.map((photo, index) => (
                   <View key={`${photo.slice(0, 12)}-${index}`} style={styles.photoTile}>
                     <Image source={{ uri: `data:image/jpeg;base64,${photo}` }} style={styles.photo} />
-                    <TouchableOpacity style={styles.removePhotoBtn} onPress={() => removePhoto(index)}>
+                    <TouchableOpacity
+                      style={styles.removePhotoBtn}
+                      onPress={() => removePhoto(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove photo ${index + 1}`}
+                    >
                       <Trash2 size={14} color={COLORS.ink} />
                     </TouchableOpacity>
                   </View>
@@ -368,13 +398,20 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
               </View>
             </ScrollView>
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={resetForm}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel daily log"
+              >
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, (!isValidEntry || submitting) && styles.submitBtnDisabled]}
                 onPress={handleAddLog}
                 disabled={!isValidEntry || submitting}
+                accessibilityRole="button"
+                accessibilityLabel="Save daily log"
               >
                 {submitting ? <ActivityIndicator color={COLORS.background} /> : <Text style={styles.submitText}>Save Log</Text>}
               </TouchableOpacity>
@@ -420,7 +457,7 @@ const styles = StyleSheet.create({
   addBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   syncBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: SPACING.sm, marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: SPACING.sm, minHeight: 28, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.warning },
   syncBadgeText: { color: COLORS.warning, fontSize: FONT_SIZE.xs, fontWeight: '800' },
-  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: 'rgba(245, 158, 11, 0.12)', borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.24)' },
+  offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: COLORS.warningSubtle, borderWidth: 1, borderColor: COLORS.warningBorder },
   offlineText: { color: COLORS.warning, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.error },
   errorText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: '700' },

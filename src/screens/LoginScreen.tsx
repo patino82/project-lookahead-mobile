@@ -128,6 +128,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             title="Continue with Google"
             onPress={handleLogin}
             style={styles.loginButton}
+            accessibilityLabel="Continue with Google"
           />
           
           <Text style={styles.footerNote}>Protected by Bespoke Services Intelligence</Text>

@@ -1,6 +1,6 @@
 # Project Lookahead Mobile
 
-A professional construction project management mobile application built with Expo, React Native, and TypeScript.
+A construction field-operations mobile app built with Expo SDK 54, React Native, and TypeScript.
 
 ## Features
 
@@ -20,34 +20,77 @@ A professional construction project management mobile application built with Exp
 - **Navigation**: React Navigation (Stack & Bottom Tabs)
 - **Styling**: StyleSheet (React Native)
 
-## Getting Started
+## Setup
 
 ### Prerequisites
 
-- Node.js (LTS)
-- Expo Go app on your mobile device (or an emulator)
+- Node.js 20.19.x or newer for Expo SDK 54.
+- Expo Go or a configured iOS/Android simulator.
+- Access to the Project Lookahead web backend.
 
-### Installation
+### Environment
 
-1. Clone the repository:
-   ```bash
-   git clone <repo-url>
-   cd project-lookahead-mobile
-   ```
+The current mobile config reads backend values from [src/config/env.ts](./src/config/env.ts):
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+- `API_BASE`: production backend URL. Do not change endpoint paths in mobile code.
+- `GOOGLE_CLIENT_ID`: Google OAuth web client ID used by the backend exchange route.
+- Optional analytics key at build/start time: `AMPLITUDE_API_KEY`.
 
-### Running the App
+The OAuth redirect URI is generated in `LoginScreen.tsx` with Expo AuthSession. The backend `/api/auth/exchange` accepts either:
 
-1. Start the Expo development server:
-   ```bash
-   npm start
-   ```
+- `{ "id_token": "<google id token>" }`
+- `{ "code": "<google authorization code>", "redirect_uri": "<exact mobile redirect uri>" }`
 
-2. Scan the QR code with your Expo Go app or press `i` for iOS simulator / `a` for Android emulator.
+### Install
+
+```bash
+npm install
+```
+
+### Run Locally
+
+```bash
+npm start
+```
+
+Scan the QR code with Expo Go, or press `i` for iOS simulator / `a` for Android emulator.
+
+For a production-like Metro start:
+
+```bash
+npx expo start --no-dev --minify
+```
+
+### Validate
+
+```bash
+npx tsc --noEmit
+npm run smoke:auth
+```
+
+`npm run smoke:auth` requires a real Google credential:
+
+```bash
+GOOGLE_ID_TOKEN="<token>" npm run smoke:auth
+```
+
+or:
+
+```bash
+GOOGLE_AUTH_CODE="<code>" GOOGLE_REDIRECT_URI="http://localhost:8081/" npm run smoke:auth
+```
+
+### Deploy
+
+Use EAS Build for native releases after the backend OAuth allowlist includes the app redirect URI:
+
+```bash
+npx expo prebuild
+npx eas build --platform ios
+npx eas build --platform android
+```
+
+Keep `app.json` scheme and bundle/package identifiers aligned with backend OAuth settings.
 
 ## Project Structure
 

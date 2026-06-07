@@ -57,7 +57,8 @@
         {
           "faceIDPermission": "Allow Project Lookahead to use Face ID for biometric login."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }
