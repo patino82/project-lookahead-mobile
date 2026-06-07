@@ -7,5 +7,7 @@ module.exports = {
   extra: {
     ...(appJson.expo.extra || {}),
     amplitudeApiKey: process.env.AMPLITUDE_API_KEY,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    API_BASE: process.env.API_BASE,
   },
 };

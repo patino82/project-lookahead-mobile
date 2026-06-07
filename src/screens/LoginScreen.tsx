@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
@@ -24,6 +24,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const BACKEND_BASE = ENV.API_BASE;
   const CLIENT_ID = ENV.GOOGLE_CLIENT_ID;
 
+  const oauthStateRef = useRef<string | null>(null);
+
   const redirectUri = AuthSession.makeRedirectUri({
     path: '/',
     preferLocalhost: false,
@@ -46,8 +48,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    // Manually construct the URL to ensure NO PKCE parameters are sent
-    const state = Math.random().toString(36).substring(7);
+    // Generate a cryptographically secure random state parameter
+    const randomBytes = crypto.getRandomValues(new Uint8Array(24));
+    const state = Array.from(randomBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    oauthStateRef.current = state;
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${CLIENT_ID}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
@@ -64,6 +68,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       if (result.type === 'success' && result.url) {
         const url = new URL(result.url);
         const code = url.searchParams.get('code');
+        const returnedState = url.searchParams.get('state');
+
+        // Validate OAuth state to prevent CSRF attacks
+        if (!returnedState || returnedState !== oauthStateRef.current) {
+          console.error('OAuth state mismatch — possible CSRF attack');
+          Alert.alert('Login Error', 'Security validation failed. Please try again.');
+          return;
+        }
+        oauthStateRef.current = null;
+
         if (code) {
           console.log('Code captured, exchanging...');
           handleCodeExchange(code);
