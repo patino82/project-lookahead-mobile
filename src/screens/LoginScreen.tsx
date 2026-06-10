@@ -130,8 +130,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           <View style={styles.logo}>
             <Zap size={40} color={COLORS.textInverse} fill={COLORS.textInverse} />
           </View>
-          <Text style={styles.brandName}>PROJECT LOOKAHEAD</Text>
-          <Text style={styles.tagline}>KINETIC FIELD COMMAND</Text>
+          <Text style={styles.brandName} numberOfLines={2}>PROJECT LOOKAHEAD</Text>
+          <Text style={styles.tagline} numberOfLines={1}>KINETIC FIELD COMMAND</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xl,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -182,17 +183,20 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   brandName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
     color: COLORS.text,
-    letterSpacing: 1,
+    letterSpacing: 0.7,
+    lineHeight: 30,
+    textAlign: 'center',
   },
   tagline: {
     fontSize: 10,
     fontWeight: '900',
     color: COLORS.textFaint,
-    letterSpacing: 4,
+    letterSpacing: 2.5,
     marginTop: 8,
+    textAlign: 'center',
   },
   formContainer: {
     width: '100%',
@@ -200,10 +204,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   welcomeText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: COLORS.text,
     marginBottom: 10,
+    textAlign: 'center',
   },
   instruction: {
     fontSize: 14,
@@ -217,11 +222,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.text,
   },
   footerNote: {
-    marginTop: 40,
+    marginTop: 28,
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    textAlign: 'center',
   }
 });

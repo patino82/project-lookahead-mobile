@@ -262,9 +262,9 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>TIMELINE</Text>
-            <Text style={styles.title}>Lookahead</Text>
+            <Text style={styles.title} numberOfLines={2}>Lookahead</Text>
             {filter && <Text style={styles.filterText}>VIEW: {String(filter).toUpperCase()}</Text>}
           </View>
           <View style={styles.weekNav}>
@@ -276,7 +276,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ route }) => {
             >
               <ChevronLeft size={18} color={COLORS.ink} />
             </TouchableOpacity>
-            <Text style={styles.weekLabel}>WEEK</Text>
+            <Text style={styles.weekLabel} numberOfLines={1}>WEEK</Text>
             <TouchableOpacity
               style={styles.navButton}
               onPress={() => setWeekOffset(value => value + 1)}
@@ -371,10 +371,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  headerCopy: { flex: 1, paddingRight: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
-  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
+  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900', lineHeight: 32 },
   filterText: { color: COLORS.textSecondary, fontSize: 9, fontWeight: '800', letterSpacing: 1, marginTop: 4 },
-  weekNav: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  weekNav: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
   navButton: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   weekLabel: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
@@ -395,12 +396,12 @@ const styles = StyleSheet.create({
   phaseCount: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '800' },
   taskRow: { flexDirection: 'row', minHeight: 56, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   taskLabel: { width: TASK_WIDTH, justifyContent: 'center', paddingHorizontal: SPACING.sm, backgroundColor: COLORS.surfaceSolid },
-  taskName: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
+  taskName: { color: COLORS.ink, fontSize: 12, fontWeight: '800', lineHeight: 16 },
   taskMeta: { color: COLORS.textSecondary, fontSize: 9, fontWeight: '700', marginTop: 3 },
   cell: { width: CELL_WIDTH, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: COLORS.border, backgroundColor: COLORS.background },
   cellWithNote: { borderBottomWidth: 2, borderBottomColor: COLORS.primary },
   symbol: { fontSize: 21, fontWeight: '900' },
-  legend: { flexDirection: 'row', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.soft },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.soft },
   legendText: { fontSize: 9, fontWeight: '900', letterSpacing: 0.4 },
   empty: { width: TASK_WIDTH + CELL_WIDTH * 7, alignItems: 'center', paddingTop: 72 },
   emptyTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', marginTop: SPACING.md },
@@ -408,7 +409,7 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: SPACING.lg, backgroundColor: COLORS.modalScrim },
   modalCard: { padding: SPACING.lg, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', marginBottom: SPACING.md },
-  noteInput: { minHeight: 120, padding: SPACING.md, borderRadius: RADIUS.sm, color: COLORS.ink, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border, textAlignVertical: 'top' },
+  noteInput: { minHeight: 120, padding: SPACING.md, borderRadius: RADIUS.sm, color: COLORS.ink, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border, textAlignVertical: 'top', fontSize: FONT_SIZE.md, lineHeight: 20 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: SPACING.md },
   secondaryButton: { paddingHorizontal: SPACING.md, paddingVertical: 12 },
   secondaryText: { color: COLORS.textSecondary, fontWeight: '800' },

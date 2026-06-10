@@ -138,9 +138,9 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>WORKFLOW</Text>
-            <Text style={styles.title}>Kanban Board</Text>
+            <Text style={styles.title} numberOfLines={2}>Kanban Board</Text>
           </View>
           <LayoutGrid size={24} color={COLORS.primary} />
         </View>
@@ -180,7 +180,7 @@ export const KanbanScreen: React.FC<{ route: any }> = ({ route }) => {
                         accessibilityLabel={`${selected ? 'Hide' : 'Show'} actions for ${task.taskName}`}
                       >
                         <View style={styles.cardTop}>
-                          <Text style={styles.taskName}>{task.taskName}</Text>
+                          <Text style={styles.taskName} numberOfLines={3}>{task.taskName}</Text>
                           <View style={styles.iconRow}>
                             {taskStatus.confirmedComplete && <CheckCircle size={16} color={COLORS.success} />}
                             {task.requiresInspection && <ClipboardCheck size={16} color={COLORS.amber} />}
@@ -224,8 +224,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  headerCopy: { flex: 1, paddingRight: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
-  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
+  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900', lineHeight: 32 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
   board: { paddingHorizontal: SPACING.md, paddingBottom: SPACING.lg, gap: SPACING.md },
@@ -237,10 +238,10 @@ const styles = StyleSheet.create({
   emptyText: { padding: SPACING.sm, color: COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
   card: { marginBottom: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.sm, borderWidth: 1, borderLeftWidth: 4, borderColor: COLORS.border, backgroundColor: COLORS.surfaceSolid },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm },
-  taskName: { flex: 1, color: COLORS.ink, fontSize: 14, fontWeight: '800' },
+  taskName: { flex: 1, color: COLORS.ink, fontSize: 14, fontWeight: '800', lineHeight: 19 },
   iconRow: { flexDirection: 'row', gap: 5 },
   phaseBadge: { alignSelf: 'flex-start', marginTop: SPACING.sm, color: COLORS.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: SPACING.sm },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', gap: SPACING.sm, marginTop: SPACING.sm },
   metaText: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '800' },
   actions: { gap: 6, marginTop: SPACING.md, paddingTop: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border },
   actionButton: { paddingVertical: 8 },

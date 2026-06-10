@@ -68,7 +68,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
         <SafeAreaView style={{ flex: 1 }}>
           <View style={styles.emptyHeader}>
              <Text style={styles.welcome}>COMMAND STACK</Text>
-             <Text style={styles.mainTitle}>Field Dashboard</Text>
+             <Text style={styles.mainTitle} numberOfLines={2}>Field Dashboard</Text>
           </View>
           <View style={styles.centered}>
             <Zap size={64} color={COLORS.border} strokeWidth={1} />
@@ -103,7 +103,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
           <View style={styles.dateChip}>
             <Text style={styles.dateChipText}>{data?.thisWeekStart?.toUpperCase() || 'LIVE'}</Text>
           </View>
-          <Text style={styles.heroTitle}>{data?.projectName?.toUpperCase() || "DASHBOARD"}</Text>
+          <Text style={styles.heroTitle} numberOfLines={3}>{data?.projectName?.toUpperCase() || "DASHBOARD"}</Text>
           
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
@@ -160,8 +160,8 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({ route }) => {
                       <Activity size={18} color={COLORS.primary} />
                     </View>
                     <View style={styles.actionInfo}>
-                      <Text style={styles.actionName}>{task.taskName.toUpperCase()}</Text>
-                      <Text style={styles.actionSub}>{task.ownerCompany}</Text>
+                      <Text style={styles.actionName} numberOfLines={2}>{task.taskName.toUpperCase()}</Text>
+                      <Text style={styles.actionSub} numberOfLines={1}>{task.ownerCompany}</Text>
                     </View>
                     <ChevronRight size={16} color={COLORS.border} />
                   </View>
@@ -213,15 +213,16 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
     color: COLORS.ink,
     marginTop: 4,
+    lineHeight: 32,
   },
   heroSection: {
     margin: SPACING.md,
     borderRadius: RADIUS.lg,
-    padding: 24,
+    padding: 20,
     ...SHADOWS.deep,
   },
   dateChip: {
@@ -241,11 +242,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
     color: COLORS.textInverse,
-    letterSpacing: -0.5,
-    marginBottom: 32,
+    lineHeight: 30,
+    marginBottom: 28,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -303,11 +304,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
+    flex: 1,
     fontSize: 12,
     fontWeight: '900',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
+    lineHeight: 17,
   },
   actionCard: {
     padding: 14,
@@ -335,15 +338,17 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.ink,
     letterSpacing: 0.2,
+    lineHeight: 19,
   },
   actionSub: {
     fontSize: 11,
     color: COLORS.textSecondary,
     fontWeight: '700',
     marginTop: 2,
+    lineHeight: 15,
   },
   intelCard: {
-    padding: 24,
+    padding: SPACING.md,
     backgroundColor: COLORS.surface,
   },
   intelItem: {
@@ -367,7 +372,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   quietCard: {
-    padding: 32,
+    padding: SPACING.lg,
     alignItems: 'center',
     borderStyle: 'dashed',
     borderColor: COLORS.border,

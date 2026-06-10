@@ -91,7 +91,7 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
             <Activity size={20} color={COLORS.primary} />
           </View>
           <View style={styles.titleInfo}>
-            <Text style={styles.projectName}>{item.name.toUpperCase()}</Text>
+            <Text style={styles.projectName} numberOfLines={2}>{item.name.toUpperCase()}</Text>
             <View style={styles.statusRow}>
               <View style={[styles.pulse, { backgroundColor: item.status === 'active' ? COLORS.success : COLORS.muted }]} />
               <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
@@ -122,9 +122,9 @@ export const ProjectListScreen: React.FC<ProjectListScreenProps> = ({ navigation
       />
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.headerArea}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.welcome}>COMMAND CENTER</Text>
-            <Text style={styles.mainTitle}>Mission Control</Text>
+            <Text style={styles.mainTitle} numberOfLines={2}>Mission Control</Text>
           </View>
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>DP</Text>
@@ -197,6 +197,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerCopy: {
+    flex: 1,
+    paddingRight: SPACING.md,
+  },
   welcome: {
     fontSize: 10,
     fontWeight: '900',
@@ -205,10 +209,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mainTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     color: COLORS.ink,
-    letterSpacing: -1,
+    lineHeight: 34,
   },
   avatarPlaceholder: {
     width: 40,
@@ -217,6 +221,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: SPACING.sm,
   },
   avatarText: {
     color: COLORS.textInverse,
@@ -298,8 +303,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     color: COLORS.ink,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     marginBottom: 4,
+    lineHeight: 21,
   },
   statusRow: {
     flexDirection: 'row',
@@ -321,25 +327,31 @@ const styles = StyleSheet.create({
   },
   detailsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    justifyContent: 'space-between',
   },
   detailItem: {
+    flex: 1,
+    minWidth: 130,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   detailText: {
+    flex: 1,
     fontSize: 11,
     color: COLORS.textSecondary,
     fontWeight: '700',
     textTransform: 'uppercase',
+    lineHeight: 15,
   },
   emptyContainer: {
-    padding: 60,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: 72,
     alignItems: 'center',
   },
   emptyText: {
@@ -354,5 +366,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     lineHeight: 20,
+    paddingHorizontal: SPACING.md,
   }
 });

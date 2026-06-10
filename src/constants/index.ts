@@ -56,15 +56,15 @@ export const FONT_SIZE = {
   sm: 12,
   md: 14,
   lg: 16,
-  xl: 20,
-  xxl: 28,
+  xl: 18,
+  xxl: 26,
 };
 
 export const RADIUS = {
-  sm: 12,
-  md: 20,
-  lg: 32,
-  xl: 44,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
   full: 9999,
 };
 

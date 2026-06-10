@@ -38,7 +38,7 @@ export const Card: React.FC<CardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     backgroundColor: COLORS.surface,
   },
   flat: {
@@ -52,13 +52,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   header: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   title: {
     fontSize: 14,
     fontWeight: '900',
     color: COLORS.ink,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    lineHeight: 19,
     textTransform: 'uppercase',
   },
   subtitle: {
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     marginTop: 2,
     fontWeight: '500',
+    lineHeight: 17,
   },
   content: {
     flexShrink: 1,

@@ -201,7 +201,7 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
           {closed ? <CheckCircle size={21} color={COLORS.success} /> : <Circle size={21} color={COLORS.textSecondary} />}
         </TouchableOpacity>
         <View style={styles.cardContent}>
-          <Text style={[styles.description, closed && styles.descriptionClosed]}>{item.description}</Text>
+          <Text style={[styles.description, closed && styles.descriptionClosed]} numberOfLines={3}>{item.description}</Text>
           <View style={styles.metaRow}>
             <View style={styles.priorityBadge}>
               <AlertTriangle size={12} color={priorityColor(item.priority)} />
@@ -231,11 +231,11 @@ export const OpenItemsScreen: React.FC<OpenItemsScreenProps> = ({ route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>TRACKING</Text>
-            <Text style={styles.title}>Open Items</Text>
+            <Text style={styles.title} numberOfLines={2}>Open Items</Text>
           </View>
-          <Text style={styles.count}>{items.filter(item => item.status === 'open').length} OPEN</Text>
+          <Text style={styles.count} numberOfLines={1}>{items.filter(item => item.status === 'open').length} OPEN</Text>
         </View>
         {error && (
           <TouchableOpacity
@@ -348,9 +348,10 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  headerCopy: { flex: 1, paddingRight: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
-  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
-  count: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: COLORS.brandSubtle },
+  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900', lineHeight: 32 },
+  count: { flexShrink: 0, color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 0.8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: COLORS.brandSubtle },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
   offlineBadge: { alignSelf: 'flex-start', marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: COLORS.warningSubtle, borderWidth: 1, borderColor: COLORS.warningBorder },
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1 },
   description: { color: COLORS.ink, fontSize: 14, fontWeight: '800', lineHeight: 20 },
   descriptionClosed: { color: COLORS.textSecondary, textDecorationLine: 'line-through' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: SPACING.sm, marginTop: SPACING.sm },
   priorityBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   dueBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { color: COLORS.textSecondary, fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
   priorityOption: { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
   priorityOptionText: { color: COLORS.textSecondary, fontWeight: '800' },
   dateButton: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
-  dateText: { color: COLORS.ink, fontSize: 14, fontWeight: '700' },
+  dateText: { flex: 1, color: COLORS.ink, fontSize: 14, fontWeight: '700', lineHeight: 19 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: SPACING.sm, marginTop: SPACING.lg },
   cancelButton: { paddingHorizontal: SPACING.md, paddingVertical: 13 },
   cancelText: { color: COLORS.textSecondary, fontWeight: '800' },

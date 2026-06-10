@@ -84,7 +84,7 @@ export const DocumentsScreen: React.FC<DocumentsScreenProps> = ({ route }) => {
           <View style={styles.cardTop}>
             <Text style={styles.docTitle} numberOfLines={2}>{label}</Text>
             <View style={styles.typePill}>
-              <Text style={styles.typeText}>{String(category).toUpperCase()}</Text>
+              <Text style={styles.typeText} numberOfLines={1}>{String(category).toUpperCase()}</Text>
             </View>
           </View>
           <View style={styles.metaRow}>
@@ -101,11 +101,11 @@ export const DocumentsScreen: React.FC<DocumentsScreenProps> = ({ route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>FILES</Text>
-            <Text style={styles.title}>Documents</Text>
+            <Text style={styles.title} numberOfLines={2}>Documents</Text>
           </View>
-          <Text style={styles.countPill}>{documents.length} FILES</Text>
+          <Text style={styles.countPill} numberOfLines={1}>{documents.length} FILES</Text>
         </View>
 
         {error && (
@@ -175,9 +175,10 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  headerCopy: { flex: 1, paddingRight: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '900', letterSpacing: 2, marginBottom: SPACING.xs },
-  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
-  countPill: { color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '900', letterSpacing: 1, paddingHorizontal: SPACING.sm, paddingVertical: 6, borderRadius: RADIUS.sm, backgroundColor: COLORS.brandSubtle, borderWidth: 1, borderColor: COLORS.brandBorder },
+  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900', lineHeight: 32 },
+  countPill: { flexShrink: 0, color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '900', letterSpacing: 0.8, paddingHorizontal: SPACING.sm, paddingVertical: 6, borderRadius: RADIUS.sm, backgroundColor: COLORS.brandSubtle, borderWidth: 1, borderColor: COLORS.brandBorder },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle, borderWidth: 1, borderColor: COLORS.errorBorder },
   errorText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: '700' },
   listContent: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },
@@ -187,11 +188,11 @@ const styles = StyleSheet.create({
   statValue: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
   statLabel: { color: COLORS.textSecondary, fontSize: FONT_SIZE.xs, fontWeight: '900', letterSpacing: 1, marginTop: 2 },
   card: { flexDirection: 'row', gap: SPACING.md, padding: SPACING.md, marginBottom: SPACING.sm, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
-  docIcon: { width: 48, height: 48, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.brandSubtle, borderWidth: 1, borderColor: COLORS.brandBorder },
+  docIcon: { width: 44, height: 44, borderRadius: RADIUS.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.brandSubtle, borderWidth: 1, borderColor: COLORS.brandBorder },
   cardBody: { flex: 1 },
   cardTop: { gap: SPACING.sm },
   docTitle: { color: COLORS.ink, fontSize: FONT_SIZE.md, fontWeight: '900', lineHeight: 20 },
-  typePill: { alignSelf: 'flex-start', paddingHorizontal: SPACING.sm, paddingVertical: 5, borderRadius: RADIUS.full, backgroundColor: COLORS.glass, borderWidth: 1, borderColor: COLORS.border },
+  typePill: { alignSelf: 'flex-start', maxWidth: '100%', paddingHorizontal: SPACING.sm, paddingVertical: 5, borderRadius: RADIUS.full, backgroundColor: COLORS.glass, borderWidth: 1, borderColor: COLORS.border },
   typeText: { color: COLORS.primary, fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: SPACING.sm },
   metaText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.xs, fontWeight: '700', flex: 1 },

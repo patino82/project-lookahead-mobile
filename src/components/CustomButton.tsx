@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, TouchableOpacityProps } from 'react-native';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../constants';
+import { COLORS, FONT_SIZE, RADIUS } from '../constants';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface CustomButtonProps extends Pick<TouchableOpacityProps, 'accessibilityLabel' | 'accessibilityHint'> {
@@ -44,8 +44,6 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
       accessibilityHint={accessibilityHint}
       style={[
         styles.touchable,
-        size === 'sm' && styles.sizeSm,
-        size === 'lg' && styles.sizeLg,
         style
       ]}
     >
@@ -53,6 +51,8 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
         {...wrapperProps}
         style={[
           styles.button, 
+          size === 'sm' && styles.buttonSm,
+          size === 'lg' && styles.buttonLg,
           !isGradient && styles[variant],
           disabled && styles.disabled
         ]}
@@ -61,6 +61,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
           styles.buttonText, 
           styles[`${variant}Text`],
           size === 'sm' && styles.textSm,
+          size === 'lg' && styles.textLg,
           disabled && styles.disabledText,
           textStyle
         ]}>{title}</Text>
@@ -71,22 +72,25 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   touchable: {
-    marginVertical: SPACING.xs,
+    overflow: 'hidden',
   },
   button: {
     borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 46,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  buttonSm: {
+    minHeight: 38,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  buttonLg: {
+    minHeight: 50,
     paddingVertical: 14,
     paddingHorizontal: 24,
-  },
-  sizeSm: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  sizeLg: {
-    paddingVertical: 18,
-    paddingHorizontal: 32,
   },
   primary: {
     // Handled by gradient
@@ -126,11 +130,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   buttonText: {
-    fontSize: 15,
+    fontSize: FONT_SIZE.md,
     fontWeight: '700',
+    textAlign: 'center',
   },
   textSm: {
-    fontSize: 13,
+    fontSize: FONT_SIZE.sm,
+  },
+  textLg: {
+    fontSize: FONT_SIZE.lg,
   },
   disabled: {
     opacity: 0.5,

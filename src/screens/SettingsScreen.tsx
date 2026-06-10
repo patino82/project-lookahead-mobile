@@ -46,8 +46,8 @@ const SettingItem: React.FC<SettingItemProps> = ({ icon, title, subtitle, onPres
       {icon}
     </View>
     <View style={styles.settingContent}>
-      <Text style={styles.settingTitle}>{title}</Text>
-      {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+      <Text style={styles.settingTitle} numberOfLines={1}>{title}</Text>
+      {subtitle && <Text style={styles.settingSubtitle} numberOfLines={2}>{subtitle}</Text>}
     </View>
     {rightElement || (showArrow && <ChevronRight size={18} color={COLORS.textSecondary} />)}
   </TouchableOpacity>
@@ -146,7 +146,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.header}>
           <Text style={styles.greeting}>CONFIG</Text>
-          <Text style={styles.title}>Settings</Text>
+          <Text style={styles.title} numberOfLines={2}>Settings</Text>
         </View>
 
         <ScrollView
@@ -159,8 +159,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
               <Zap size={32} color={COLORS.textInverse} />
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>Project Lookahead</Text>
-              <Text style={styles.profileRole}>{email}</Text>
+              <Text style={styles.profileName} numberOfLines={1}>Project Lookahead</Text>
+              <Text style={styles.profileRole} numberOfLines={2}>{email}</Text>
             </View>
           </View>
 
@@ -265,6 +265,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.xxl,
     fontWeight: '900',
     color: COLORS.ink,
+    lineHeight: 32,
   },
   scrollContent: {
     paddingHorizontal: SPACING.lg,
@@ -275,15 +276,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.surfaceSolid,
     borderRadius: RADIUS.md,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     marginBottom: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   profileIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 16,
     backgroundColor: COLORS.brand,
     justifyContent: 'center',
     alignItems: 'center',
@@ -302,6 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: '600',
+    lineHeight: 17,
   },
   sectionLabel: {
     fontSize: 10,
@@ -332,6 +334,7 @@ const styles = StyleSheet.create({
   },
   settingContent: {
     flex: 1,
+    paddingRight: SPACING.sm,
   },
   settingTitle: {
     fontSize: 14,
@@ -343,6 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     fontWeight: '500',
+    lineHeight: 17,
   },
   logoutBtn: {
     flexDirection: 'row',

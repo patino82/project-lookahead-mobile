@@ -198,9 +198,9 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>DEPENDENCIES</Text>
-            <Text style={styles.title}>Gantt Chart</Text>
+            <Text style={styles.title} numberOfLines={2}>Gantt Chart</Text>
           </View>
           <BarChart3 size={24} color={COLORS.primary} />
         </View>
@@ -286,7 +286,7 @@ export const GanttScreen: React.FC<{ route: any }> = ({ route }) => {
             >
               <X size={18} color={COLORS.textSecondary} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{selectedTask?.taskName}</Text>
+            <Text style={styles.modalTitle} numberOfLines={3}>{selectedTask?.taskName}</Text>
             <Text style={styles.modalMeta}>{selectedTask?.phase || 'Unassigned'} · {selectedTask?.durationDays || 1} days</Text>
             <Text style={styles.modalLabel}>CHANGE STATUS</Text>
             <View style={styles.statusOptions}>
@@ -317,8 +317,9 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
+  headerCopy: { flex: 1, paddingRight: SPACING.md },
   eyebrow: { color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 2, marginBottom: 4 },
-  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900' },
+  title: { color: COLORS.ink, fontSize: FONT_SIZE.xxl, fontWeight: '900', lineHeight: 32 },
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, padding: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.errorSubtle },
   errorText: { color: COLORS.error, fontSize: 12, fontWeight: '700' },
   chart: { flexDirection: 'row' },
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
   phaseText: { flex: 1, color: COLORS.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   phaseCount: { color: COLORS.textSecondary, fontSize: 10, fontWeight: '800' },
   taskLabel: { height: ROW_HEIGHT, justifyContent: 'center', paddingHorizontal: SPACING.sm, backgroundColor: COLORS.surfaceSolid, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  taskName: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
+  taskName: { color: COLORS.ink, fontSize: 12, fontWeight: '800', lineHeight: 16 },
   taskMeta: { marginTop: 3, color: COLORS.textSecondary, fontSize: 9, fontWeight: '700' },
   timelineRow: { height: ROW_HEIGHT, flexDirection: 'row', position: 'relative', borderBottomWidth: 1, borderBottomColor: COLORS.border },
   gridCell: { width: CELL_WIDTH, borderLeftWidth: 1, borderLeftColor: COLORS.border },
@@ -345,7 +346,7 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, justifyContent: 'center', padding: SPACING.lg, backgroundColor: COLORS.modalScrim },
   modalCard: { padding: SPACING.lg, borderRadius: RADIUS.md, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   closeButton: { alignSelf: 'flex-end', padding: SPACING.xs },
-  modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900' },
+  modalTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '900', lineHeight: 24 },
   modalMeta: { marginTop: 6, color: COLORS.textSecondary, fontSize: 13, fontWeight: '700' },
   modalLabel: { marginTop: SPACING.lg, marginBottom: SPACING.sm, color: COLORS.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   statusOptions: { gap: SPACING.sm },

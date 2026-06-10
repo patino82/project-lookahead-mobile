@@ -61,16 +61,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.ink,
     marginBottom: 4,
+    lineHeight: 19,
   },
   description: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textSecondary,
     marginBottom: 8,
+    lineHeight: 17,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
   },
   statusBadge: {
     paddingHorizontal: 8,

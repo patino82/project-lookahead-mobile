@@ -264,7 +264,7 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
           <Clock size={14} color={COLORS.textSecondary} />
           <Text style={styles.logDate}>{formatDate(item.date)}</Text>
         </View>
-        <Text style={styles.logAuthor}>{item.author}</Text>
+        <Text style={styles.logAuthor} numberOfLines={1}>{item.author}</Text>
       </View>
       <Text style={styles.logContent}>{item.content}</Text>
     </View>
@@ -276,7 +276,7 @@ export const DailyLogScreen: React.FC<DailyLogScreenProps> = ({ route }) => {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>JOURNAL</Text>
-            <Text style={styles.title}>Daily Logs</Text>
+            <Text style={styles.title} numberOfLines={2}>Daily Logs</Text>
           </View>
           <TouchableOpacity
             style={styles.addBtn}
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: SPACING.lg, paddingTop: 20, paddingBottom: SPACING.md },
   greeting: { fontSize: FONT_SIZE.xs, fontWeight: '900', color: COLORS.primary, letterSpacing: 2, marginBottom: SPACING.xs },
-  title: { fontSize: FONT_SIZE.xxl, fontWeight: '900', color: COLORS.ink },
+  title: { fontSize: FONT_SIZE.xxl, fontWeight: '900', color: COLORS.ink, lineHeight: 32 },
   addBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   syncBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: SPACING.sm, marginHorizontal: SPACING.lg, marginBottom: SPACING.md, paddingHorizontal: SPACING.sm, minHeight: 28, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.warning },
   syncBadgeText: { color: COLORS.warning, fontSize: FONT_SIZE.xs, fontWeight: '800' },
@@ -462,11 +462,11 @@ const styles = StyleSheet.create({
   errorBanner: { marginHorizontal: SPACING.lg, marginBottom: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.error },
   errorText: { color: COLORS.error, fontSize: FONT_SIZE.sm, fontWeight: '700' },
   listContent: { paddingHorizontal: SPACING.lg, paddingBottom: 40 },
-  logCard: { backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, padding: SPACING.lg, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
-  logHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm },
-  logHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  logCard: { backgroundColor: COLORS.surfaceSolid, borderRadius: RADIUS.sm, padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
+  logHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.sm },
+  logHeaderLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   logDate: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
-  logAuthor: { fontSize: 11, fontWeight: '700', color: COLORS.primary },
+  logAuthor: { maxWidth: '42%', fontSize: 11, fontWeight: '700', color: COLORS.primary },
   logContent: { fontSize: FONT_SIZE.md, color: COLORS.ink, lineHeight: 22 },
   emptyContainer: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 18, fontWeight: '900', color: COLORS.ink, marginTop: SPACING.md },
@@ -477,19 +477,19 @@ const styles = StyleSheet.create({
   closeBtn: { width: 44, height: 44, borderRadius: RADIUS.sm, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   formContent: { padding: SPACING.lg, paddingBottom: SPACING.xl },
   field: { marginBottom: SPACING.md },
-  fieldLabel: { marginBottom: SPACING.sm, color: COLORS.textSecondary, fontSize: FONT_SIZE.sm, fontWeight: '800' },
-  input: { minHeight: 44, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, color: COLORS.ink, fontSize: FONT_SIZE.md },
+  fieldLabel: { marginBottom: SPACING.sm, color: COLORS.textSecondary, fontSize: FONT_SIZE.xs, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+  input: { minHeight: 46, paddingHorizontal: SPACING.md, paddingVertical: 12, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border, color: COLORS.ink, fontSize: FONT_SIZE.md, lineHeight: 20 },
   textArea: { minHeight: 96, textAlignVertical: 'top' },
   photoActions: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
   photoAction: { flex: 1, minHeight: 44, flexDirection: 'row', gap: SPACING.sm, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceSolid, borderWidth: 1, borderColor: COLORS.border },
   photoActionText: { color: COLORS.ink, fontSize: FONT_SIZE.md, fontWeight: '700' },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  photoTile: { width: '31%', aspectRatio: 1, borderRadius: RADIUS.sm, overflow: 'hidden', backgroundColor: COLORS.surfaceSolid },
+  photoTile: { flexBasis: '31%', maxWidth: '31%', aspectRatio: 1, borderRadius: RADIUS.sm, overflow: 'hidden', backgroundColor: COLORS.surfaceSolid },
   photo: { width: '100%', height: '100%' },
   removePhotoBtn: { position: 'absolute', top: SPACING.xs, right: SPACING.xs, width: 28, height: 28, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.background },
   modalActions: { flexDirection: 'row', gap: SPACING.sm, padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.surfaceSolid },
   cancelBtn: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
-  cancelText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.md, fontWeight: '700' },
+  cancelText: { color: COLORS.textSecondary, fontSize: FONT_SIZE.md, fontWeight: '800' },
   submitBtn: { flex: 1, minHeight: 48, justifyContent: 'center', alignItems: 'center', borderRadius: RADIUS.sm, backgroundColor: COLORS.primary },
   submitBtnDisabled: { opacity: 0.5 },
   submitText: { color: COLORS.background, fontSize: FONT_SIZE.md, fontWeight: '900' },
